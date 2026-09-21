@@ -1,0 +1,35 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+[Dd]ebug/
+[Rr]elease/
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## IDE
+.vs/
+.idea/
+*.swp
+*~
+
+## Logs and local config
+logs/
+*.log
+appsettings.*.local.json
+
+## EF
+**/Migrations/*.Designer.cs.bak
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Secrets
+secrets.json

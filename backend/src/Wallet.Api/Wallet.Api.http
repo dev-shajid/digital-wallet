@@ -1,0 +1,3 @@
+@Wallet.Api_HostAddress = http://localhost:8000
+
+GET {{Wallet.Api_HostAddress}}/health
