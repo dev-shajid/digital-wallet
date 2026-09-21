@@ -1,11 +1,10 @@
+using Wallet.Domain.Common;
 using Wallet.Domain.Enums;
 
 namespace Wallet.Domain.Entities;
 
-public class Currency
+public class Currency : AuditableEntity
 {
-    public Guid Id { get; set; }
-
     public required string Code { get; set; }
 
     public required string Name { get; set; }
@@ -17,10 +16,6 @@ public class Currency
     public int DecimalPlaces { get; set; }
 
     public CurrencyStatus Status { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    public DateTime UpdatedAt { get; set; }
 
     public ICollection<Wallet> Wallets { get; set; } = [];
 
