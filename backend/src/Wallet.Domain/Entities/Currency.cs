@@ -4,6 +4,8 @@ namespace Wallet.Domain.Entities;
 
 public class Currency
 {
+    public Guid Id { get; set; }
+
     public required string Code { get; set; }
 
     public required string Name { get; set; }
@@ -21,4 +23,6 @@ public class Currency
     public DateTime UpdatedAt { get; set; }
 
     public ICollection<Wallet> Wallets { get; set; } = [];
+
+    public ICollection<Transaction> Transactions { get; set; } = [];
 }

@@ -9,7 +9,7 @@ public class Wallet : AuditableEntity
 
     public User User { get; set; } = null!;
 
-    public required string CurrencyCode { get; set; }
+    public Guid CurrencyId { get; set; }
 
     public Currency Currency { get; set; } = null!;
 
@@ -17,7 +17,7 @@ public class Wallet : AuditableEntity
 
     public WalletStatus Status { get; set; }
 
-    public ICollection<Transaction> Transactions { get; set; } = [];
+    public ICollection<WalletLog> WalletLogs { get; set; } = [];
 
     public ICollection<P2PTransfer> ReceivedP2PTransfers { get; set; } = [];
 }

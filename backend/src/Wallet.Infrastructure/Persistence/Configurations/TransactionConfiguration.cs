@@ -10,10 +10,6 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
     {
         builder.HasKey(t => t.Id);
 
-        builder.Property(t => t.CurrencyCode)
-            .HasMaxLength(3)
-            .IsRequired();
-
         builder.Property(t => t.Type)
             .HasConversion<string>()
             .HasMaxLength(20)
@@ -35,6 +31,8 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.HasIndex(t => t.Reference)
             .IsUnique();
 
+        builder.HasIndex(t => new { t.UserId, t.CreatedAt });
+
         builder.Property(t => t.Note)
             .HasMaxLength(1000);
 
@@ -44,10 +42,14 @@ public class TransactionConfiguration : IEntityTypeConfiguration<Transaction>
         builder.Property(t => t.FailureReason)
             .HasMaxLength(2000);
 
-        builder.HasOne(t => t.Wallet)
-            .WithMany(w => w.Transactions)
-            .HasForeignKey(t => new { t.WalletId, t.CurrencyCode })
-            .HasPrincipalKey(w => new { w.Id, w.CurrencyCode })
+        builder.HasOne(t => t.User)
+            .WithMany(u => u.Transactions)
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(t => t.Currency)
+            .WithMany(c => c.Transactions)
+            .HasForeignKey(t => t.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.ToTable(t =>

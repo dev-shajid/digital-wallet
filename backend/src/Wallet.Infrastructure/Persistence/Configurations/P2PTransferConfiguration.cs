@@ -10,6 +10,8 @@ public class P2PTransferConfiguration : IEntityTypeConfiguration<P2PTransfer>
     {
         builder.HasKey(p => p.TransactionId);
 
+        builder.HasIndex(p => p.ReceiverWalletId);
+
         builder.HasOne(p => p.Transaction)
             .WithOne(t => t.P2PTransfer)
             .HasForeignKey<P2PTransfer>(p => p.TransactionId)

@@ -10,10 +10,6 @@ public class WalletConfiguration : IEntityTypeConfiguration<WalletEntity>
     {
         builder.HasKey(w => w.Id);
 
-        builder.Property(w => w.CurrencyCode)
-            .HasMaxLength(3)
-            .IsRequired();
-
         builder.Property(w => w.Balance)
             .HasColumnType("numeric(18,4)")
             .IsRequired();
@@ -23,10 +19,8 @@ public class WalletConfiguration : IEntityTypeConfiguration<WalletEntity>
             .HasMaxLength(20)
             .IsRequired();
 
-        builder.HasIndex(w => new { w.UserId, w.CurrencyCode })
+        builder.HasIndex(w => new { w.UserId, w.CurrencyId })
             .IsUnique();
-
-        builder.HasAlternateKey(w => new { w.Id, w.CurrencyCode });
 
         builder.ToTable(t => t.HasCheckConstraint("ck_wallets_balance_non_negative", "balance >= 0"));
 
@@ -37,7 +31,7 @@ public class WalletConfiguration : IEntityTypeConfiguration<WalletEntity>
 
         builder.HasOne(w => w.Currency)
             .WithMany(c => c.Wallets)
-            .HasForeignKey(w => w.CurrencyCode)
+            .HasForeignKey(w => w.CurrencyId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

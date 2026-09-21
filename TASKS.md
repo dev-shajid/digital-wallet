@@ -2,7 +2,7 @@
 
 Digital Wallet & Expense Management System. Task breakdown for parallel team work.
 
-The database design is final and shared by everyone (see `CURSOR.md`, section 4). Tasks below are split so that people inside the same milestone can work in parallel with no blocking. Dependencies are listed per task.
+The database design is final and shared by everyone (see `AGENTS.md`, section 4). Tasks below are split so that people inside the same milestone can work in parallel with no blocking. Dependencies are listed per task.
 
 ---
 
@@ -72,7 +72,7 @@ All tasks in this milestone are independent of each other.
 
 **Scope**
 
-- Currency: admin CRUD. A currency in use cannot be deleted (`409`); set `INACTIVE` instead. Authenticated users can read active currencies.
+- Currency: admin CRUD. A currency in use cannot be deleted (`409`); set `INACTIVE` instead. Authenticated users can read active currencies. API routes may use ISO `code` in URLs; internally wallets and transactions reference `currencyId`.
 - User: list own wallets, get own wallet by id. Another user's wallet returns `404`.
 - Admin: list a user's wallets, assign a new wallet to a user (currency must be `ACTIVE`, one wallet per user per currency, otherwise `409`).
 - Admin: change wallet status `ACTIVE <-> FROZEN`. `CLOSED` only when balance is 0 and is final.
@@ -83,12 +83,12 @@ All tasks in this milestone are independent of each other.
 
 **Scope**
 
+- `IWalletLedger` is the **only** writer of `wallet_logs` and `Wallet.balance`.
 - `IWalletLedger` implementation:
-  - `CreatePending(walletId, type, amount, note)`
-  - `MarkSuccess(transactionId)`
-  - `MarkFailed(transactionId, failureCode, failureReason)`
-  - `Debit(walletId, amount)` / `Credit(walletId, amount)`
-- Debit/credit rules: row-level lock (`SELECT ... FOR UPDATE`), wallet must be `ACTIVE`, balance must never go below 0, currency taken from the wallet.
+  - `CreatePending(userId, currencyId, type, amount, note, legs)` — `legs` is a list of `{ walletId, direction, amount }`; creates the `PENDING` transaction and one `wallet_logs` row per leg (balances not applied yet).
+  - `ApplyLeg(walletLogId)` — row-level lock on the wallet, enforce rules, set `balanceBefore` / `balanceAfter`, update `Wallet.balance`.
+  - `MarkSuccess(transactionId)` / `MarkFailed(transactionId, failureCode, failureReason)`.
+- Apply rules: wallet must be `ACTIVE`, balance must never go below 0, wallet currency must match `Transaction.currencyId`.
 - Unique `reference` generator.
 - User: `GET /transactions` (filter by type, status, wallet, date range; paginated) and `GET /transactions/{id}`. Returns `failureCode`, never `failureReason`.
 - Admin: `GET /admin/transactions` and detail, including `failureReason`.
@@ -141,7 +141,7 @@ Tasks 6, 7 and 8 are independent of each other. They only use `IWalletLedger`.
 - `POST /transfers`. Receiver is found by `accountNo` and currency (never by email).
 - Rules: receiver exists, receiver is not the sender, amount > 0, same currency, both wallets `ACTIVE`, sufficient balance.
 - One DB transaction. Lock both wallets in a fixed order (by id) to avoid deadlocks.
-- Save `P2PTransfer` row.
+- Through `IWalletLedger`: create the `Transaction`, the `P2PTransfer` row (`receiverWalletId`), and sender `DEBIT` / receiver `CREDIT` legs in `wallet_logs`.
 - Failed attempts are recorded with the proper `failureCode`.
 
 **Depends on:** Tasks 1, 2, 3.

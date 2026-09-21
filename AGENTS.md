@@ -71,6 +71,7 @@ A user can only access their own wallets, transactions and expenses. Regular use
 - Sender picks own wallet and receiver by **`accountNo`** (not email) plus currency. Receiver wallet = receiver's wallet in the same currency.
 - Rules: receiver exists, receiver != sender, amount > 0, sufficient balance, same currency, both wallets `ACTIVE`.
 - Atomic: debit sender, credit receiver, record transaction, all in one DB transaction with row locks.
+- Sender and receiver wallets are recorded as `wallet_logs` rows (`DEBIT` on sender, `CREDIT` on receiver) and a `P2PTransfer` row stores the receiver wallet for incoming-history queries.
 
 ### 3.6 Expense
 - User records an expense from a wallet with amount, category, description, expense date.
@@ -79,8 +80,10 @@ A user can only access their own wallets, transactions and expenses. Regular use
 - Users can list/filter/search own expenses and see summaries.
 
 ### 3.7 Transactions
-- Every money movement is a `Transaction` row: reference, type, amount, currency, status, note, failure info.
-- Users view and filter own transaction history. Admin views all.
+- Every money movement is a `Transaction` row owned by the initiating user (`userId`): reference, type, amount, currency, status, note, failure info. Wallet involvement is recorded in `wallet_logs`.
+- **Transaction history (user):** transactions where `Transaction.userId` = the current user, **plus** incoming P2P transfers where `P2PTransfer.receiverWalletId` belongs to one of the user's wallets.
+- **Wallet statement:** `wallet_logs` for that wallet ordered by `createdAt`.
+- Admin views all transactions.
 - **Failed transactions must record why**: `failureCode` (short enum-like code) and `failureReason` (detail, e.g. bank response) so admin can debug. Users see `failureCode` only; `failureReason` is admin-only.
 
 ### 3.8 Dashboards
@@ -99,12 +102,13 @@ Database: **PostgreSQL**. Naming: PascalCase entities in C#, `snake_case` tables
 ### Enums
 
 ```
-Role              : USER, ADMIN
-CurrencyStatus    : ACTIVE, INACTIVE
-WalletStatus      : ACTIVE, FROZEN, CLOSED
-TransactionType   : CASH_IN, CASH_OUT, P2P_TRANSFER, EXPENSE
-TransactionStatus : PENDING, SUCCESS, FAILED
-CategoryStatus    : ACTIVE, INACTIVE
+Role                 : USER, ADMIN
+CurrencyStatus       : ACTIVE, INACTIVE
+WalletStatus         : ACTIVE, FROZEN, CLOSED
+TransactionType      : CASH_IN, CASH_OUT, P2P_TRANSFER, EXPENSE
+TransactionStatus    : PENDING, SUCCESS, FAILED
+CategoryStatus       : ACTIVE, INACTIVE
+WalletLogDirection   : DEBIT, CREDIT
 ```
 
 `CASH_OUT` exists in the enum for future use; not implemented now.
@@ -124,7 +128,8 @@ createdAt, updatedAt
 
 **Currency**
 ```
-code          string PK        (ISO 4217, e.g. BDT, USD)
+id            uuid PK
+code          string UNIQUE, immutable   (ISO 4217, e.g. BDT, USD)
 name          string
 symbol        string
 iconUrl       string
@@ -132,26 +137,26 @@ decimalPlaces int
 status        CurrencyStatus
 createdAt, updatedAt
 ```
+`BDT` is seeded with a fixed `id` for deterministic migrations and tests.
 
 **Wallet**
 ```
 id            uuid PK
 userId        uuid FK -> User.id
-currencyCode  string FK -> Currency.code
+currencyId    uuid FK -> Currency.id   ON DELETE RESTRICT
 balance       decimal
 status        WalletStatus
 createdAt, updatedAt
 
-UNIQUE (userId, currencyCode)
-UNIQUE (id, currencyCode)          -- target of composite FK from Transaction
+UNIQUE (userId, currencyId)
 CHECK  balance >= 0
 ```
 
-**Transaction** (belongs to a **wallet**, not directly to a user; user is derived via Wallet)
+**Transaction** (belongs to the **user** who initiated it; wallet legs are in `wallet_logs`)
 ```
 id            uuid PK
-walletId      uuid
-currencyCode  string
+userId        uuid FK -> User.id
+currencyId    uuid FK -> Currency.id   ON DELETE RESTRICT
 type          TransactionType
 amount        decimal
 status        TransactionStatus
@@ -161,10 +166,29 @@ failureCode   string NULL
 failureReason string NULL       (admin-only detail)
 createdAt, updatedAt
 
-FK (walletId, currencyCode) -> Wallet (id, currencyCode)   -- composite, guarantees currency matches wallet
+INDEX (userId, createdAt)
 CHECK amount > 0
 CHECK status <> 'FAILED' OR failureReason IS NOT NULL
 ```
+
+**WalletLog** (`wallet_logs` — one row per wallet involved in a transaction)
+```
+id             uuid PK
+walletId       uuid FK -> Wallet.id        ON DELETE RESTRICT
+transactionId  uuid FK -> Transaction.id   ON DELETE RESTRICT
+direction      WalletLogDirection
+amount         numeric(18,4)
+balanceBefore  numeric(18,4) NULL
+balanceAfter   numeric(18,4) NULL
+createdAt      timestamp UTC
+
+UNIQUE (transactionId, walletId)
+INDEX (walletId, createdAt)
+CHECK amount > 0
+CHECK (balanceBefore IS NULL) = (balanceAfter IS NULL)
+CHECK balanceAfter >= 0 when not null
+```
+Created with the `PENDING` transaction. `balanceBefore` / `balanceAfter` are set only when the leg is applied. Rows are append-only (never deleted; balances updated at most once). Currency comes from `Transaction.currencyId`; wallet currency must match (application rule).
 
 **BankTransfer** (1:1 with Transaction, for `CASH_IN` / `CASH_OUT`)
 ```
@@ -172,13 +196,15 @@ transactionId uuid PK, FK -> Transaction.id
 bankCode      string
 bankReference string            (id returned by the bank service)
 ```
+The affected wallet is identified via `wallet_logs`.
 
 **P2PTransfer** (1:1 with Transaction, for `P2P_TRANSFER`)
 ```
 transactionId    uuid PK, FK -> Transaction.id
-receiverWalletId uuid FK -> Wallet.id
+receiverWalletId uuid FK -> Wallet.id   ON DELETE RESTRICT
+INDEX (receiverWalletId)
 ```
-Sender wallet = `Transaction.walletId`. Sender != receiver is enforced in the application layer.
+Sender user = `Transaction.userId`. Sender wallet = the `DEBIT` row in `wallet_logs`. Receiver user = `Wallet(receiverWalletId).userId`. Application rules (ledger service): sender wallet ≠ `receiverWalletId`; `receiverWalletId` equals the `walletId` of the `CREDIT` row in `wallet_logs`; both wallets share `Transaction.currencyId`.
 
 **ExpenseCategory**
 ```
@@ -189,19 +215,23 @@ status      CategoryStatus
 createdAt, updatedAt
 ```
 
-**Expense** (1:1 with Transaction, for `EXPENSE`; amount/description/wallet come from Transaction)
+**Expense** (1:1 with Transaction, for `EXPENSE`; amount/description come from Transaction)
 ```
 transactionId uuid PK, FK -> Transaction.id
 categoryId    uuid FK -> ExpenseCategory.id   ON DELETE RESTRICT
 expenseDate   date
 ```
+The debited wallet is identified via `wallet_logs`.
 
 ### Relationships
 
 ```
 User 1 ---- N Wallet
+User 1 ---- N Transaction
 Currency 1 ---- N Wallet
-Wallet 1 ---- N Transaction               (composite FK with currencyCode)
+Currency 1 ---- N Transaction
+Wallet 1 ---- N WalletLog
+Transaction 1 ---- N WalletLog
 Transaction 1 ---- 0..1 BankTransfer
 Transaction 1 ---- 0..1 P2PTransfer
 Transaction 1 ---- 0..1 Expense
@@ -210,15 +240,17 @@ ExpenseCategory 1 ---- N Expense
 ```
 
 ### Design notes
-- No redundancy on purpose: user derives from `Wallet`, sender wallet derives from `Transaction`, amount/description for expenses live on `Transaction`.
-- `Wallet.balance` is a deliberate denormalization for performance and atomic locking. Always update it in the same DB transaction as the `Transaction` row.
+- `Transaction` holds the initiating user and currency; per-wallet amounts and balance snapshots live in `wallet_logs`.
+- Amount and user note for expenses live on `Transaction`.
+- P2P sender wallet is the `DEBIT` row in `wallet_logs`; receiver wallet is the `CREDIT` row and is also stored on `P2PTransfer.receiverWalletId` for efficient incoming-transfer history.
+- `Wallet.balance` is a deliberate denormalization for performance and atomic locking. It must always equal the `balanceAfter` of the latest **applied** `wallet_logs` row for that wallet. Only `IWalletLedger` writes `wallet_logs` and `Wallet.balance`.
 - Child tables use `transactionId` as PK to guarantee 1:1.
 
 ---
 
 ## 5. Non-Functional Requirements
 
-- **Consistency:** every balance change happens inside a DB transaction with row-level locking (`SELECT ... FOR UPDATE`) or optimistic concurrency. No lost updates, no negative balance.
+- **Consistency:** every balance change happens inside a DB transaction with row-level locking (`SELECT ... FOR UPDATE`) or optimistic concurrency. No lost updates, no negative balance. **Invariant:** `Wallet.balance` = latest applied `balanceAfter` on that wallet = sum of applied `CREDIT` amounts minus sum of applied `DEBIT` amounts in `wallet_logs` (reconciliation test in a later phase).
 - **Security:** password hashing (ASP.NET Core Identity `PasswordHasher` or BCrypt/Argon2), JWT auth, role-based authorization, no secrets in source control, input validation on every endpoint.
 - **Maintainability:** clean layering, small classes, no business logic in controllers, no EF Core leaking into the Domain layer.
 - **Observability:** structured logging, correlation id per request, health endpoints.

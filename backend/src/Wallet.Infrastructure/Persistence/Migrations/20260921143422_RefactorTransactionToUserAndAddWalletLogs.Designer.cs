@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Wallet.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using Wallet.Infrastructure.Persistence;
 namespace Wallet.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260921143422_RefactorTransactionToUserAndAddWalletLogs")]
+    partial class RefactorTransactionToUserAndAddWalletLogs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -183,25 +186,6 @@ namespace Wallet.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_expense_categories_name");
 
                     b.ToTable("expense_categories", (string)null);
-                });
-
-            modelBuilder.Entity("Wallet.Domain.Entities.P2PTransfer", b =>
-                {
-                    b.Property<Guid>("TransactionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("transaction_id");
-
-                    b.Property<Guid>("ReceiverWalletId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("receiver_wallet_id");
-
-                    b.HasKey("TransactionId")
-                        .HasName("pk_p2p_transfers");
-
-                    b.HasIndex("ReceiverWalletId")
-                        .HasDatabaseName("ix_p2p_transfers_receiver_wallet_id");
-
-                    b.ToTable("p2p_transfers", (string)null);
                 });
 
             modelBuilder.Entity("Wallet.Domain.Entities.Transaction", b =>
@@ -483,27 +467,6 @@ namespace Wallet.Infrastructure.Persistence.Migrations
                     b.Navigation("Transaction");
                 });
 
-            modelBuilder.Entity("Wallet.Domain.Entities.P2PTransfer", b =>
-                {
-                    b.HasOne("Wallet.Domain.Entities.Wallet", "ReceiverWallet")
-                        .WithMany("ReceivedP2PTransfers")
-                        .HasForeignKey("ReceiverWalletId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_p2p_transfers_wallets_receiver_wallet_id");
-
-                    b.HasOne("Wallet.Domain.Entities.Transaction", "Transaction")
-                        .WithOne("P2PTransfer")
-                        .HasForeignKey("Wallet.Domain.Entities.P2PTransfer", "TransactionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_p2p_transfers_transactions_transaction_id");
-
-                    b.Navigation("ReceiverWallet");
-
-                    b.Navigation("Transaction");
-                });
-
             modelBuilder.Entity("Wallet.Domain.Entities.Transaction", b =>
                 {
                     b.HasOne("Wallet.Domain.Entities.Currency", "Currency")
@@ -585,8 +548,6 @@ namespace Wallet.Infrastructure.Persistence.Migrations
 
                     b.Navigation("Expense");
 
-                    b.Navigation("P2PTransfer");
-
                     b.Navigation("WalletLogs");
                 });
 
@@ -599,8 +560,6 @@ namespace Wallet.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Wallet.Domain.Entities.Wallet", b =>
                 {
-                    b.Navigation("ReceivedP2PTransfers");
-
                     b.Navigation("WalletLogs");
                 });
 #pragma warning restore 612, 618

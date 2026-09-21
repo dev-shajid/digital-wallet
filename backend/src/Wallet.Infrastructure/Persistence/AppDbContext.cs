@@ -14,6 +14,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<Transaction> Transactions => Set<Transaction>();
 
+    public DbSet<WalletLog> WalletLogs => Set<WalletLog>();
+
     public DbSet<BankTransfer> BankTransfers => Set<BankTransfer>();
 
     public DbSet<P2PTransfer> P2PTransfers => Set<P2PTransfer>();
@@ -67,6 +69,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 }
 
                 currency.UpdatedAt = utcNow;
+            }
+
+            if (entry.Entity is WalletLog walletLog && entry.State == EntityState.Added)
+            {
+                walletLog.CreatedAt = utcNow;
             }
         }
     }

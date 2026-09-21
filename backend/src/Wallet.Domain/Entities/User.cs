@@ -16,4 +16,6 @@ public class User : AuditableEntity
     public Role Role { get; set; }
 
     public ICollection<Wallet> Wallets { get; set; } = [];
+
+    public ICollection<Transaction> Transactions { get; set; } = [];
 }

@@ -5,10 +5,13 @@ namespace Wallet.Infrastructure.Persistence.Seed;
 
 internal static class CurrencySeed
 {
+    internal static readonly Guid BdtId = new("11111111-1111-4111-8111-111111111111");
+
     internal static readonly DateTime SeedTimestamp = new(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     internal static Currency Bdt => new()
     {
+        Id = BdtId,
         Code = "BDT",
         Name = "Bangladeshi Taka",
         Symbol = "৳",

@@ -5,11 +5,13 @@ namespace Wallet.Domain.Entities;
 
 public class Transaction : AuditableEntity
 {
-    public Guid WalletId { get; set; }
+    public Guid UserId { get; set; }
 
-    public Wallet Wallet { get; set; } = null!;
+    public User User { get; set; } = null!;
 
-    public required string CurrencyCode { get; set; }
+    public Guid CurrencyId { get; set; }
+
+    public Currency Currency { get; set; } = null!;
 
     public TransactionType Type { get; set; }
 
@@ -30,4 +32,6 @@ public class Transaction : AuditableEntity
     public P2PTransfer? P2PTransfer { get; set; }
 
     public Expense? Expense { get; set; }
+
+    public ICollection<WalletLog> WalletLogs { get; set; } = [];
 }
