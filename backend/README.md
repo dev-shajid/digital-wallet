@@ -53,16 +53,20 @@ backend/
 ├── Directory.Packages.props       # central NuGet versions
 ├── docker-compose.yml             # PostgreSQL only
 └── src/
-    ├── Wallet.Domain/             # entities, enums (no NuGet dependencies)
-    ├── Wallet.Application/        # application abstractions (minimal in Phase 1)
-    ├── Wallet.Infrastructure/     # EF Core, migrations, persistence
-    └── Wallet.Api/                # host: Program, middleware, Swagger, health
+    └── WalletApp/                 # Single project (Classic MVC)
+        ├── Controllers/           # [C] API Controllers (HealthController, etc.)
+        ├── Models/                # [M] Database entities, enums, DTOs
+        │   ├── Entities/          # Database models (User, Wallet, Transaction, etc.)
+        │   ├── Enums/             # Enums (Role, WalletStatus, etc.)
+        │   └── DTOs/              # Request/Response contracts
+        ├── Data/                  # AppDbContext, Configurations, Migrations, Seed
+        ├── Services/              # Business logic services
+        ├── Middleware/            # Exception handling, CorrelationId
+        └── Program.cs             # Application entry point
 └── tests/
-    ├── Wallet.UnitTests/          # placeholder project
-    └── Wallet.IntegrationTests/   # placeholder project
+    ├── Wallet.UnitTests/          # Unit tests referencing WalletApp
+    └── Wallet.IntegrationTests/   # Integration tests referencing WalletApp
 ```
-
-**Dependency direction:** `Api` → `Application` + `Infrastructure` → `Application` → `Domain`.
 
 ---
 
@@ -114,9 +118,7 @@ Use [user secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-se
 dotnet restore
 dotnet build
 
-dotnet ef database update \
-  --project src/Wallet.Infrastructure/Wallet.Infrastructure.csproj \
-  --startup-project src/Wallet.Api/Wallet.Api.csproj
+dotnet ef database update --project src/WalletApp/WalletApp.csproj
 ```
 
 This creates tables, constraints, and seeds the **BDT** currency row.
@@ -125,7 +127,7 @@ This creates tables, constraints, and seeds the **BDT** currency row.
 
 ```bash
 export ASPNETCORE_ENVIRONMENT=Development
-dotnet run --project src/Wallet.Api/Wallet.Api.csproj
+dotnet run --project src/WalletApp/WalletApp.csproj
 ```
 
 The app listens on **[http://localhost:8000](http://localhost:8000)** (see `Properties/launchSettings.json`).

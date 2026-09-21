@@ -1,7 +1,7 @@
 # Project Tasks & Execution Roadmap
 
 **Project:** Digital Wallet & Expense Management System  
-**Architecture:** Clean Architecture (.NET 8 Web API, EF Core, PostgreSQL)  
+**Architecture:** Classic MVC (.NET 8 Web API, EF Core, PostgreSQL)  
 **Strategy:** Foundation-first (Lead Developer), followed by isolated, parallelized feature tracks for team members.
 
 ---

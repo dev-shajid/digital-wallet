@@ -262,7 +262,7 @@ ExpenseCategory 1 ---- N Expense
 ## 6. Tech Stack & Conventions
 
 - **.NET (latest LTS)**, ASP.NET Core Web API, C# with nullable enabled, file-scoped namespaces.
-- **Clean Architecture**: `Domain` <- `Application` <- `Infrastructure` <- `Api`. Dependencies point inward. Domain has no package references.
+- **Architecture**: Single-project Classic MVC (`src/WalletApp`) with clear folders: `Controllers/`, `Models/` (Entities, Enums, DTOs), `Data/` (DbContext, Configurations, Migrations), and `Services/`.
 - **EF Core** with Npgsql, Fluent API configurations in separate `IEntityTypeConfiguration<T>` classes (no data annotations for mapping). `EFCore.NamingConventions` for snake_case.
 - **Serilog** for logging (console + rolling file), request logging, correlation id.
 - **Health checks**: liveness and readiness (DB).
