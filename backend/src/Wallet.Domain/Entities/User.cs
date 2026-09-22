@@ -11,7 +11,7 @@ public class User : AuditableEntity
     /// <summary>Unique login email.</summary>
     public string Email { get; set; } = string.Empty;
 
-    /// <summary>System-generated 10-digit account number (Luhn check digit). Immutable once set.</summary>
+    /// <summary>System-generated account number: "AC" followed by an 8-digit auto-incrementing sequence value. Immutable once set.</summary>
     public string AccountNo { get; set; } = string.Empty;
 
     /// <summary>Hashed password - the plain-text password is never stored.</summary>

@@ -31,5 +31,8 @@ public class WalletDbContext(DbContextOptions<WalletDbContext> options) : DbCont
         // Loads every IEntityTypeConfiguration<T> class in this project (the files under
         // Persistence/Configurations/) instead of listing them one by one here.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WalletDbContext).Assembly);
+
+        // Backs the "AC"-prefixed account numbers generated in AccountNumberGenerator.
+        modelBuilder.HasSequence<long>("account_no_seq").StartsAt(1).IncrementsBy(1);
     }
 }

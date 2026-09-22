@@ -33,9 +33,10 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
-    /// Atomically registers a new user and creates their default BDT wallet inside a single database transaction.
+    /// Atomically registers a new user and creates their default BDT wallet inside a single database transaction,
+    /// then logs them in immediately by returning a JWT alongside the created profile.
     /// </summary>
-    public async Task<ApiResponse<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
+    public async Task<ApiResponse<LoginResponse>> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
     {
         string normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
@@ -45,7 +46,7 @@ public class AuthService : IAuthService
 
         if (emailExists)
         {
-            return new ApiResponse<RegisterResponse>
+            return new ApiResponse<LoginResponse>
             {
                 Success = false,
                 Status = StatusCodes.Status409Conflict,
@@ -54,29 +55,8 @@ public class AuthService : IAuthService
             };
         }
 
-        // 2. Generate unique 10-digit Luhn account number
-        string accountNo;
-        int maxRetries = 5;
-        int attempt = 0;
-
-        do
-        {
-            accountNo = _accountNumberGenerator.GenerateAccountNumber();
-            bool accountExists = await _dbContext.Users.AnyAsync(u => u.AccountNo == accountNo, ct);
-            if (!accountExists) break;
-
-            attempt++;
-            if (attempt >= maxRetries)
-            {
-                return new ApiResponse<RegisterResponse>
-                {
-                    Success = false,
-                    Status = StatusCodes.Status500InternalServerError,
-                    Message = "Failed to generate a unique account number. Please try again.",
-                    Data = null
-                };
-            }
-        } while (true);
+        // 2. Generate the next "AC"-prefixed account number from the DB sequence
+        string accountNo = await _accountNumberGenerator.GenerateAccountNumberAsync(ct);
 
         // 3. Hash the password
         string passwordHash = _passwordHasher.HashPassword(request.Password);
@@ -117,18 +97,26 @@ public class AuthService : IAuthService
             throw;
         }
 
-        // 7. Prepare response
-        var responseData = new RegisterResponse
+        // 7. Issue a token immediately so the caller is logged in on registration
+        string token = _jwtTokenGenerator.GenerateToken(user);
+
+        var responseData = new LoginResponse
         {
-            UserId = user.Id,
-            Name = user.Name,
-            Email = user.Email,
-            AccountNo = user.AccountNo,
-            Role = user.Role.ToString(),
-            CreatedAt = user.CreatedAt
+            Token = token,
+            TokenType = "Bearer",
+            ExpiresIn = _jwtTokenGenerator.ExpirationMinutes * 60,
+            User = new RegisterResponse
+            {
+                UserId = user.Id,
+                Name = user.Name,
+                Email = user.Email,
+                AccountNo = user.AccountNo,
+                Role = user.Role.ToString(),
+                CreatedAt = user.CreatedAt
+            }
         };
 
-        return new ApiResponse<RegisterResponse>
+        return new ApiResponse<LoginResponse>
         {
             Success = true,
             Status = StatusCodes.Status201Created,

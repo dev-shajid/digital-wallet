@@ -5,6 +5,6 @@ namespace WalletSystem.Application.Abstractions;
 
 public interface IAuthService
 {
-    Task<ApiResponse<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken ct = default);
+    Task<ApiResponse<LoginResponse>> RegisterAsync(RegisterRequest request, CancellationToken ct = default);
     Task<ApiResponse<LoginResponse>> LoginAsync(LoginRequest request, CancellationToken ct = default);
 }
