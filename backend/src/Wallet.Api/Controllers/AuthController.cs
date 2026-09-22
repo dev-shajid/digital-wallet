@@ -1,7 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
+
 using WalletSystem.Application.Abstractions;
 using WalletSystem.Application.Auth.Models;
 using WalletSystem.Application.Common.Models;
+
+// Requirements
+// IAuthService should be created in:
+// Wallet.Application/Abstractions/IAuthService.cs
+
+// Requirements
+// RegisterRequest, RegisterResponse, LoginRequest, LoginResponse
+// should be created in something like:
+// Wallet.Application/Auth/Models/
+// or another appropriate Application folder.
 
 namespace WalletSystem.Api.Controllers;
 

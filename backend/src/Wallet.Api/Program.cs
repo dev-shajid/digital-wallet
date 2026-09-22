@@ -1,49 +1,59 @@
+using System.Text;
+
 using HealthChecks.NpgSql;
+
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+
 using Serilog;
+
 using WalletSystem.Api.Conventions;
 using WalletSystem.Api.Middleware;
 using WalletSystem.Application.Common.Models;
 using WalletSystem.Infrastructure;
+using WalletSystem.Infrastructure.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ---- Logging (Serilog) ----------------------------------------------------
-// Like configuring pino/winston before anything else in an Express app, so every
-// later piece of startup code can already log through it.
+
+// Like configuring pino/winston before anything else in an Express app,
+// so every later piece of startup code can already log through it.
 builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)
     .Enrich.FromLogContext()
     .WriteTo.Console()
     .WriteTo.File(
-        Path.Combine(context.HostingEnvironment.ContentRootPath, "logs", "wallet-.log"),
+        Path.Combine(
+            context.HostingEnvironment.ContentRootPath,
+            "logs",
+            "wallet-.log"),
         rollingInterval: RollingInterval.Day));
 
-// ---- Services (this is the "container" you register your app's dependencies into,
-// similar to building up an Express `app` object or a NestJS module) --------
-// Every controller automatically gets "api/v1" glued onto the front of its route
-// (see ApiPrefixConvention), so a controller only ever declares its own resource
-// name - e.g. [Route("diagnostics")], never [Route("api/v1/diagnostics")].
+// ---- Services -------------------------------------------------------------
+
+// Every controller automatically gets "api/v1" glued onto the front of
+// its route through ApiPrefixConvention.
 builder.Services.AddControllers(options =>
     options.Conventions.Add(new ApiPrefixConvention("api/v1")));
 
-// [ApiController]'s automatic input validation (e.g. a missing required field) would
-// otherwise return its own ValidationProblemDetails shape. This makes it return the
-// same ApiResponse<T> envelope as everything else instead, so EVERY response -
-// success, validation failure, or unhandled exception - looks the same.
+// [ApiController]'s automatic input validation is converted into the same
+// ApiResponse<T> envelope used by the rest of the API.
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
     {
         var errors = context.ModelState
             .Where(entry => entry.Value?.Errors.Count > 0)
-            .SelectMany(entry => entry.Value!.Errors.Select(error => new ApiError
-            {
-                Field = entry.Key,
-                Message = error.ErrorMessage
-            }))
+            .SelectMany(entry =>
+                entry.Value!.Errors.Select(error => new ApiError
+                {
+                    Field = entry.Key,
+                    Message = error.ErrorMessage
+                }))
             .ToList();
 
         return new BadRequestObjectResult(new ApiResponse<object?>
@@ -57,17 +67,75 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
+// Register JWT settings from the "Jwt" configuration section.
+builder.Services.Configure<JwtSettings>(
+    builder.Configuration.GetSection("Jwt"));
+
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Turns any unhandled exception into the same ApiResponse<T> envelope (see
-// GlobalExceptionHandler) instead of an ASP.NET Core default error page.
-// AddProblemDetails() is required here too - not because we use its format (our
-// handler always writes the ApiResponse envelope itself), but because
-// UseExceptionHandler() refuses to start up without a fallback formatter registered.
+// ---- JWT Authentication ---------------------------------------------------
+
+// var jwtSettings = builder.Configuration
+//     .GetSection("Jwt")
+//     .Get<JwtSettings>()
+//     ?? throw new InvalidOperationException("Missing 'Jwt' configuration.");
+
+// if (string.IsNullOrWhiteSpace(jwtSettings.Secret))
+// {
+//     throw new InvalidOperationException("Missing 'Jwt:Secret' configuration.");
+// }
+
+// builder.Services
+//     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//     .AddJwtBearer(options =>
+//     {
+//         options.TokenValidationParameters = new TokenValidationParameters
+//         {
+//             ValidateIssuer = true,
+//             ValidateAudience = true,
+//             ValidateLifetime = true,
+//             ValidateIssuerSigningKey = true,
+
+//             ValidIssuer = jwtSettings.Issuer,
+//             ValidAudience = jwtSettings.Audience,
+
+//             IssuerSigningKey = new SymmetricSecurityKey(
+//                 Encoding.UTF8.GetBytes(jwtSettings.Secret))
+//         };
+//     });
+
+var jwtKey = builder.Configuration["Jwt:Key"]!;
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtKey)
+            )
+        };
+    });
+builder.Services.AddAuthorization();
+
+// ---- Exception Handling ---------------------------------------------------
+
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
+// ---- Swagger --------------------------------------------------------------
+
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
@@ -75,47 +143,99 @@ builder.Services.AddSwaggerGen(options =>
         Title = "Digital Wallet & Expense Management API",
         Version = "v1"
     });
+
+    options.AddSecurityDefinition(
+        "Bearer",
+        new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            Description = "Enter your JWT token."
+        });
+
+    options.AddSecurityRequirement(
+        new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+        {
+            {
+                new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                    {
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
 });
 
-// Liveness = "is the process up" (no dependencies checked).
-// Readiness = "is the process up AND can it reach everything it needs" (here: Postgres).
+// ---- Health Checks --------------------------------------------------------
+
 var connectionString = builder.Configuration.GetConnectionString("Default")
-    ?? throw new InvalidOperationException("Missing 'ConnectionStrings:Default' configuration value.");
+    ?? throw new InvalidOperationException(
+        "Missing 'ConnectionStrings:Default' configuration value.");
 
 builder.Services.AddHealthChecks()
-    .AddNpgSql(connectionString, name: "postgres", tags: ["ready"]);
+    .AddNpgSql(
+        connectionString,
+        name: "postgres",
+        tags: ["ready"]);
 
 var app = builder.Build();
 
-// ---- Middleware pipeline (order matters - same idea as Express middleware chain) ----
+// ---- Middleware pipeline -------------------------------------------------
+
 app.UseExceptionHandler();
+
 app.UseMiddleware<CorrelationIdMiddleware>();
+
 app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
+
+    app.MapGet(
+        "/",
+        () => Results.Redirect("/swagger"))
+        .ExcludeFromDescription();
 }
 
+// JWT authentication must run before authorization.
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-// No business routes exist yet (Phase 1 = structure + schema + logging + health only),
-// so these health endpoints are the only operational HTTP surface for now.
-// /health          - runs every registered check (here: just Postgres) - the simple "is everything OK" endpoint
-// /health/live      - liveness: no checks, just confirms the process can respond
-// /health/ready     - readiness: process up AND can reach Postgres
+// ---- Health Endpoints ----------------------------------------------------
+
+// /health
+// Runs every registered health check.
+
+// /health/live
+// Only confirms that the application process is running.
+
+// /health/ready
+// Confirms that the application can reach required dependencies.
 app.MapHealthChecks("/health");
-app.MapHealthChecks("/health/live", new HealthCheckOptions
-{
-    Predicate = _ => false
-});
-app.MapHealthChecks("/health/ready", new HealthCheckOptions
-{
-    Predicate = check => check.Tags.Contains("ready")
-});
+
+app.MapHealthChecks(
+    "/health/live",
+    new HealthCheckOptions
+    {
+        Predicate = _ => false
+    });
+
+app.MapHealthChecks(
+    "/health/ready",
+    new HealthCheckOptions
+    {
+        Predicate = check => check.Tags.Contains("ready")
+    });
 
 app.Run();

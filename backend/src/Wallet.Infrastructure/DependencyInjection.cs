@@ -5,6 +5,7 @@ using WalletSystem.Application.Abstractions;
 using WalletSystem.Infrastructure.Persistence;
 using WalletSystem.Infrastructure.Services;
 
+
 namespace WalletSystem.Infrastructure;
 
 /// <summary>
@@ -27,6 +28,7 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<IAccountNumberGenerator, AccountNumberGenerator>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
         return services;
     }
