@@ -10,8 +10,8 @@ Member 1 (Foundation & Contracts)  ──►  Member 2 (JWT & Login) + Member 3 
 ## 👤 Member 1: Contracts, DTOs & Security Utilities (MUST DO FIRST)
 - [x] Create `RegisterRequest.cs` in `backend/src/Wallet.Application/Auth/Models/` with validation rules for name, email, and password.
 - [x] Create `RegisterResponse.cs` in `backend/src/Wallet.Application/Auth/Models/` with user summary fields (`UserId`, `Name`, `Email`, `AccountNo`, `Role`, `CreatedAt`).
-- [ ] Create `LoginRequest.cs` in `backend/src/Wallet.Application/Auth/Models/` with email and password fields.
-- [ ] Create `LoginResponse.cs` in `backend/src/Wallet.Application/Auth/Models/` with token, token type, expiry, and user summary.
+- [x] Create `LoginRequest.cs` in `backend/src/Wallet.Application/Auth/Models/` with email and password fields.
+- [x] Create `LoginResponse.cs` in `backend/src/Wallet.Application/Auth/Models/` with token, token type, expiry, and user summary.
 - [ ] Create `IAuthService.cs` in `backend/src/Wallet.Application/Abstractions/` declaring `RegisterAsync` and `LoginAsync` returning `ApiResponse<T>`.
 - [ ] Create `IPasswordHasher.cs` in `backend/src/Wallet.Application/Abstractions/` declaring `HashPassword` and `VerifyPassword`.
 - [ ] Create `IAccountNumberGenerator.cs` in `backend/src/Wallet.Application/Abstractions/` declaring `GenerateAccountNumber` and `ValidateAccountNumber`.
