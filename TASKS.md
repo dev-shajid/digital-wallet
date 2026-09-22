@@ -85,12 +85,12 @@ flowchart TD
 
 #### Task 0: Shared Architecture, Contracts & Test Foundation
 
-* **0.1 API Host & Routing Plumbing:**
+* **0.1 API Host & Routing Plumbing: [COMPLETED]**
   - In `src/Wallet.Api/Program.cs`:
-    - Register controller support (`builder.Services.AddControllers()`).
-    - Add global route prefix convention (`/api/v1`) or create `BaseApiController` inherited by all feature controllers.
-    - Map controllers (`app.MapControllers()`).
-  - Configure Swagger for JWT Bearer Authentication (`SecurityDefinition` + `SecurityRequirement`) so all Swagger endpoints support bearer tokens out-of-the-box.
+    - Registered controller support (`builder.Services.AddControllers()`).
+    - Created `BaseApiController` (`api/v1/[controller]`) inherited by feature controllers.
+    - Mapped controllers (`app.MapControllers()`).
+  - Configured Swagger for JWT Bearer Authentication (`SecurityDefinition` + `SecurityRequirement`) so all Swagger endpoints support bearer tokens.
 
 * **0.2 Shared Contracts & Application Abstractions (`Wallet.Application/Common`):**
   - **`ICurrentUser` Interface & Development Stub:**

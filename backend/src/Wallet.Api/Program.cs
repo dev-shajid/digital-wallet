@@ -15,6 +15,7 @@ builder.Host.UseSerilog((context, services, configuration) =>
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerDocumentation();
 
@@ -32,6 +33,8 @@ app.UseHttpsRedirection();
 
 app.MapGet("/health", () => Results.Json(ApiResponse<object?>.Ok(null, "Service is healthy.")))
     .ExcludeFromDescription();
+
+app.MapControllers();
 
 app.Run();
 
