@@ -1,4 +1,10 @@
+"use client"
+
+import { zodResolver } from "@hookform/resolvers/zod"
 import { cn } from "cn"
+import Link from "next/link"
+import { Controller, useForm } from "react-hook-form"
+import * as z from "zod"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -11,16 +17,40 @@ import {
 import {
   Field,
   FieldDescription,
+  FieldError,
   FieldGroup,
   FieldLabel,
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 
+const signinFormSchema = z.object({
+  email: z
+    .string()
+    .min(1, "Email is required.")
+    .email("Enter a valid email address."),
+  password: z.string().min(1, "Password is required."),
+})
+
+type SigninFormValues = z.infer<typeof signinFormSchema>
+
 export function SigninForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const form = useForm<SigninFormValues>({
+    resolver: zodResolver(signinFormSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  })
+
+  function onSubmit(data: SigninFormValues) {
+    // TODO: wire up to the auth API once login endpoints are available.
+    console.log(data)
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -31,7 +61,7 @@ export function SigninForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
             <FieldGroup>
               <Field>
                 <Button variant="outline" type="button">
@@ -56,41 +86,65 @@ export function SigninForm({
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
                 Or continue with
               </FieldSeparator>
+              <Controller
+                name="email"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                    <Input
+                      {...field}
+                      id={field.name}
+                      type="email"
+                      placeholder="m@example.com"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="email"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <div className="flex items-center">
+                      <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                      <a
+                        href="#"
+                        className="ml-auto text-sm underline-offset-4 hover:underline"
+                      >
+                        Forgot your password?
+                      </a>
+                    </div>
+                    <Input
+                      {...field}
+                      id={field.name}
+                      type="password"
+                      aria-invalid={fieldState.invalid}
+                      autoComplete="current-password"
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
               <Field>
-                <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                />
-              </Field>
-              <Field>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <a
-                    href="#"
-                    className="ml-auto text-sm underline-offset-4 hover:underline"
-                  >
-                    Forgot your password?
-                  </a>
-                </div>
-                <Input id="password" type="password" required />
-              </Field>
-              <Field>
-                <Button type="submit">Login</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Logging in..." : "Login"}
+                </Button>
                 <FieldDescription className="text-center">
-                  Don&apos;t have an account? <a href="#">Sign up</a>
+                  Don&apos;t have an account? <Link href="/sign-up">Sign up</Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>
           </form>
         </CardContent>
       </Card>
-      <FieldDescription className="px-6 text-center">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
-      </FieldDescription>
     </div>
   )
 }
