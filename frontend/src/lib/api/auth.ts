@@ -3,6 +3,7 @@ import type {
   ApiResponse,
   AuthSession,
   LoginPayload,
+  RefreshTokenPayload,
   RegisterPayload,
 } from "@/types/auth"
 
@@ -19,5 +20,10 @@ export async function loginUser(payload: LoginPayload) {
     "/auth/login",
     payload
   )
+  return data
+}
+
+export async function logoutUser(payload: RefreshTokenPayload) {
+  const { data } = await api.post<ApiResponse<null>>("/auth/logout", payload)
   return data
 }

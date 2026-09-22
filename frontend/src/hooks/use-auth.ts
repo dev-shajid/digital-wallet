@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import { loginUser, registerUser } from "@/lib/api/auth"
+import { loginUser, logoutUser, registerUser } from "@/lib/api/auth"
 import { useAuthStore } from "@/store/auth-store"
 import type { AuthUser } from "@/types/auth"
 
@@ -43,7 +43,16 @@ export function useLogout() {
   const clearSession = useAuthStore((state) => state.clearSession)
 
   return () => {
+    const { refreshToken } = useAuthStore.getState()
+
+    // Clear local state and navigate right away - logout should feel instant. The
+    // server-side revoke is best-effort: the local session is gone either way, so a
+    // failed request here (e.g. offline) doesn't need to block or be surfaced.
     clearSession()
     router.push("/sign-in")
+
+    if (refreshToken) {
+      logoutUser({ refreshToken }).catch(() => {})
+    }
   }
 }

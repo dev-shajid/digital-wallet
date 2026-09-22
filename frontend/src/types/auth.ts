@@ -13,7 +13,13 @@ export interface AuthSession {
   token: string
   tokenType: string
   expiresIn: number
+  refreshToken: string
+  refreshTokenExpiresIn: number
   user: AuthUser
+}
+
+export interface RefreshTokenPayload {
+  refreshToken: string
 }
 
 export interface RegisterPayload {
