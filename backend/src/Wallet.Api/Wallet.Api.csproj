@@ -5,6 +5,12 @@
     <RootNamespace>WalletSystem.Api</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Generates an XML file from the /// <summary> comments above each controller
+         action, which SwaggerGen (below) reads so Swagger UI shows real descriptions
+         instead of just bare route names. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- Don't fail the build just because some classes/methods lack a /// <summary> -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

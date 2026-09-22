@@ -31,8 +31,11 @@
     <!-- Health checks: readiness probe that pings Postgres -->
     <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
 
-    <!-- Swagger/OpenAPI: like swagger-jsdoc + swagger-ui-express, generated from code -->
-    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+    <!-- Swagger/OpenAPI: like swagger-jsdoc + swagger-ui-express, generated from code.
+         Pinned to the mature 6.x line on purpose: the newer 10.x line emits an OpenAPI
+         "3.0.4" version string that its own bundled Swagger UI doesn't recognize yet
+         ("Unable to render this definition... not a valid version field"). -->
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.9.0" />
 
     <!-- Testing: xUnit is the Jest/Mocha equivalent -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />

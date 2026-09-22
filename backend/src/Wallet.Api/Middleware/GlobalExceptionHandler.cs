@@ -1,14 +1,15 @@
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
+using WalletSystem.Application.Common.Models;
 
 namespace WalletSystem.Api.Middleware;
 
 /// <summary>
-/// Catches any exception that escapes a request and turns it into an RFC 7807
-/// "ProblemDetails" JSON response instead of an ASP.NET Core default error page - the
-/// .NET equivalent of an Express `app.use((err, req, res, next) => { ... })` catch-all
-/// error handler. The real exception message/stack trace is only logged on the server;
-/// the client always gets a generic, safe message (never a stack trace).
+/// Catches any exception that escapes a request and turns it into the same
+/// <see cref="ApiResponse{T}"/> envelope every other endpoint uses, instead of an
+/// ASP.NET Core default error page - the .NET equivalent of an Express
+/// <c>app.use((err, req, res, next) => { ... })</c> catch-all error handler. The real
+/// exception message/stack trace is only ever logged on the server; the client always
+/// gets a generic, safe message.
 /// </summary>
 public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
@@ -16,18 +17,20 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
     {
         logger.LogError(exception, "Unhandled exception while processing {Method} {Path}", httpContext.Request.Method, httpContext.Request.Path);
 
-        var problemDetails = new ProblemDetails
+        const int status = StatusCodes.Status500InternalServerError;
+
+        var response = new ApiResponse<object?>
         {
-            Status = StatusCodes.Status500InternalServerError,
-            Title = "An unexpected error occurred.",
-            Detail = "Something went wrong on our side. Please try again later.",
-            Instance = httpContext.Request.Path
+            Success = false,
+            Status = status,
+            Message = "Something went wrong on our side. Please try again later.",
+            Data = null
         };
 
-        httpContext.Response.StatusCode = problemDetails.Status.Value;
-        httpContext.Response.ContentType = "application/problem+json";
+        httpContext.Response.StatusCode = status;
+        httpContext.Response.ContentType = "application/json";
 
-        await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
+        await httpContext.Response.WriteAsJsonAsync(response, cancellationToken);
 
         return true;
     }
