@@ -2,11 +2,10 @@ import { useMutation } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { loginUser, logoutUser, registerUser } from "@/lib/api/auth"
 import { useAuthStore } from "@/store/auth-store"
-import type { AuthUser } from "@/types/auth"
 
-function homeRouteForRole(role: AuthUser["role"]) {
-  return role === "ADMIN" ? "/admin" : "/dashboard"
-}
+// Every role lands on the same route after auth - /dashboard decides what to show
+// based on the signed-in user's role, rather than routing roles to different URLs.
+const HOME_ROUTE = "/dashboard"
 
 export function useLogin() {
   const router = useRouter()
@@ -17,7 +16,7 @@ export function useLogin() {
     onSuccess: (response) => {
       if (!response.data) return
       setSession(response.data)
-      router.push(homeRouteForRole(response.data.user.role))
+      router.push(HOME_ROUTE)
     },
   })
 }
@@ -33,7 +32,7 @@ export function useRegister() {
       // Registration returns a token too, so the user is logged in immediately -
       // no separate trip through the sign-in form.
       setSession(response.data)
-      router.push(homeRouteForRole(response.data.user.role))
+      router.push(HOME_ROUTE)
     },
   })
 }

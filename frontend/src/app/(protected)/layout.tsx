@@ -1,35 +1,44 @@
 "use client"
 
-import { LogOut, Wallet } from "lucide-react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { usePathname } from "next/navigation"
+import { AppSidebar } from "@/components/app-sidebar"
 import { RequireAuth } from "@/components/guards/require-auth"
-import { useLogout } from "@/hooks/use-auth"
-import { useAuthStore } from "@/store/auth-store"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator"
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+
+const PAGE_TITLES: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/profile": "Profile",
+}
 
 function ProtectedHeader() {
-  const user = useAuthStore((state) => state.user)
-  const logout = useLogout()
+  const pathname = usePathname()
+  const title = PAGE_TITLES[pathname] ?? "Digital Wallet"
 
   return (
-    <header className="flex items-center justify-between border-b px-6 py-4">
-      <Link href={user?.role === "ADMIN" ? "/admin" : "/dashboard"} className="flex items-center gap-2 font-medium">
-        <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Wallet className="size-4" />
-        </div>
-        Digital Wallet
-      </Link>
-      <div className="flex items-center gap-4">
-        {user && (
-          <span className="text-sm text-muted-foreground">
-            {user.name} · {user.accountNo} · <span className="font-medium">{user.role}</span>
-          </span>
-        )}
-        <Button variant="outline" size="sm" onClick={logout}>
-          <LogOut className="size-4" />
-          Log out
-        </Button>
-      </div>
+    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <SidebarTrigger className="-ml-1" />
+      <Separator
+        orientation="vertical"
+        className="mr-2 data-vertical:h-4 data-vertical:self-auto"
+      />
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbPage>{title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
     </header>
   )
 }
@@ -41,10 +50,13 @@ export default function ProtectedLayout({
 }) {
   return (
     <RequireAuth>
-      <div className="flex min-h-svh flex-col">
-        <ProtectedHeader />
-        <main className="flex flex-1 flex-col p-6">{children}</main>
-      </div>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <ProtectedHeader />
+          <main className="flex flex-1 flex-col gap-4 p-4 md:p-6">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
     </RequireAuth>
   )
 }
