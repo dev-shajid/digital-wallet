@@ -24,4 +24,6 @@ public class User : AuditableEntity
     public ICollection<Wallet> Wallets { get; set; } = new List<Wallet>();
 
     public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }

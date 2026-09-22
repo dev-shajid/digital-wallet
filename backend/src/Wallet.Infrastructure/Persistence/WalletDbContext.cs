@@ -15,6 +15,7 @@ namespace WalletSystem.Infrastructure.Persistence;
 public class WalletDbContext(DbContextOptions<WalletDbContext> options) : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Currency> Currencies => Set<Currency>();
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<Transaction> Transactions => Set<Transaction>();

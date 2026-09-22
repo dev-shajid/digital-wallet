@@ -123,6 +123,11 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // Without this, the handler silently remaps short claim names ("sub", "role") to
+        // long legacy URIs depending on the IdentityModel version, which makes reading
+        // claims back (see ClaimsPrincipalExtensions.GetUserId) version-fragile.
+        options.MapInboundClaims = false;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
