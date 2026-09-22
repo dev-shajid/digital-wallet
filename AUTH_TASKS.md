@@ -31,7 +31,7 @@ Member 1 (Foundation & Contracts)  ──►  Member 2 (JWT & Login) + Member 3 
 ---
 
 ## 👤 Member 3: Atomic Sign-Up Flow, Controller & DI (Starts after Member 1)
-- [ ] Implement `RegisterAsync` method in `backend/src/Wallet.Infrastructure/Services/AuthService.cs` to check email uniqueness and hash password.
-- [ ] Wrap User creation and default BDT Wallet creation inside a single `IDbContextTransaction` in `AuthService.RegisterAsync` to ensure atomic sign-up.
-- [ ] Update `backend/src/Wallet.Api/Controllers/AuthController.cs` to fix namespaces and wire `Register` and `Login` HTTP endpoints.
-- [ ] Register `IAuthService`, `IPasswordHasher`, `IAccountNumberGenerator`, and `IJwtTokenGenerator` in `backend/src/Wallet.Infrastructure/DependencyInjection.cs`.
+- [x] Implement `RegisterAsync` method in `backend/src/Wallet.Infrastructure/Services/AuthService.cs` to check email uniqueness and hash password.
+- [x] Wrap User creation and default BDT Wallet creation inside a single `IDbContextTransaction` in `AuthService.RegisterAsync` to ensure atomic sign-up.
+- [x] Update `backend/src/Wallet.Api/Controllers/AuthController.cs` to fix namespaces and wire `Register` and `Login` HTTP endpoints.
+- [x] Register `IAuthService`, `IPasswordHasher`, `IAccountNumberGenerator`, and `IJwtTokenGenerator` in `backend/src/Wallet.Infrastructure/DependencyInjection.cs`.

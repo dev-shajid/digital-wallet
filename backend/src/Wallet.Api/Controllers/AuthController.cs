@@ -1,15 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Wallet.Application.Common.Models;
-
-// Requirements
-// IAuthService should be created in:
-// Wallet.Application/Abstractions/IAuthService.cs
-
-// Requirements
-// RegisterRequest, RegisterResponse, LoginRequest, LoginResponse
-// should be created in something like:
-// Wallet.Application/Auth/Models/
-// or another appropriate Application folder.
+using WalletSystem.Application.Abstractions;
+using WalletSystem.Application.Auth.Models;
+using WalletSystem.Application.Common.Models;
 
 namespace WalletSystem.Api.Controllers;
 
@@ -17,63 +9,36 @@ namespace WalletSystem.Api.Controllers;
 [Route("auth")]
 public class AuthController : ControllerBase
 {
-    // Requirements
-    // The interface should be defined in:
-    // Wallet.Application/Abstractions/IAuthService.cs
     private readonly IAuthService _authService;
 
-    // ASP.NET Core injects the teammate's AuthService implementation here.
-    // Teammate's implementation should be registered in:
-    // Wallet.Infrastructure/DependencyInjection.cs
     public AuthController(IAuthService authService)
     {
         _authService = authService;
     }
 
-    // POST /api/v1/auth/register
+    /// <summary>
+    /// Registers a new user and automatically creates their default BDT wallet.
+    /// </summary>
     [HttpPost("register")]
-    public async Task<ActionResult<ApiResponse<RegisterResponse>>> Register(
-        [FromBody] RegisterRequest request)
+    [ProducesResponseType(typeof(ApiResponse<RegisterResponse>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiResponse<RegisterResponse>>> Register([FromBody] RegisterRequest request)
     {
-        // Requirements
-        // RegisterAsync() should be implemented in the authentication
-        // service, probably in:
-        // Wallet.Application/Auth/AuthService.cs
-        //
-        // The service should handle:
-        // - validating registration data
-        // - checking email uniqueness
-        // - generating account number
-        // - hashing password
-        // - creating User
-        // - creating default BDT Wallet
-        // - saving everything atomically
         var result = await _authService.RegisterAsync(request);
-
-        // Controller's responsibility:
-        // Return the status code and response received from the service.
         return StatusCode(result.Status, result);
     }
 
-    // POST /api/v1/auth/login
+    /// <summary>
+    /// Authenticates a user with email and password and returns a JWT token.
+    /// </summary>
     [HttpPost("login")]
-    public async Task<ActionResult<ApiResponse<LoginResponse>>> Login(
-        [FromBody] LoginRequest request)
+    [ProducesResponseType(typeof(ApiResponse<LoginResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<LoginResponse>>> Login([FromBody] LoginRequest request)
     {
-        // Requirements
-        // LoginAsync() should be implemented in the authentication
-        // service, probably in:
-        // Wallet.Application/Auth/AuthService.cs
-        //
-        // The service should handle:
-        // - finding the user
-        // - verifying the password
-        // - generating JWT
-        // - creating LoginResponse
         var result = await _authService.LoginAsync(request);
-
-        // Controller's responsibility:
-        // Return the status code and response received from the service.
         return StatusCode(result.Status, result);
     }
 }
