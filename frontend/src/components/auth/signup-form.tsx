@@ -1,7 +1,6 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { cn } from "cn"
 import Link from "next/link"
 import { Controller, useForm } from "react-hook-form"
 import * as z from "zod"
@@ -22,6 +21,9 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { useRegister } from "@/hooks/use-auth"
+import { getApiErrorMessage } from "@/lib/api/error"
+import { cn } from "@/lib/utils"
 
 const signupFormSchema = z
   .object({
@@ -59,9 +61,14 @@ export function SignupForm({
     },
   })
 
+  const registerMutation = useRegister()
+
   function onSubmit(data: SignupFormValues) {
-    // TODO: wire up to the auth API once registration endpoints are available.
-    console.log(data)
+    registerMutation.mutate({
+      name: data.name,
+      email: data.email,
+      password: data.password,
+    })
   }
 
   return (
@@ -76,6 +83,11 @@ export function SignupForm({
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
             <FieldGroup>
+              {registerMutation.isError && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {getApiErrorMessage(registerMutation.error)}
+                </div>
+              )}
               <Controller
                 name="name"
                 control={form.control}
@@ -128,6 +140,7 @@ export function SignupForm({
                           {...field}
                           id={field.name}
                           type="password"
+                          placeholder="••••••••"
                           aria-invalid={fieldState.invalid}
                           autoComplete="new-password"
                         />
@@ -149,6 +162,7 @@ export function SignupForm({
                           {...field}
                           id={field.name}
                           type="password"
+                          placeholder="••••••••"
                           aria-invalid={fieldState.invalid}
                           autoComplete="new-password"
                         />
@@ -164,8 +178,11 @@ export function SignupForm({
                 </FieldDescription>
               </Field>
               <Field>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting || registerMutation.isPending}
+                >
+                  {registerMutation.isPending
                     ? "Creating account..."
                     : "Create Account"}
                 </Button>
