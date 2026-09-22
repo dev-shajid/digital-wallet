@@ -104,7 +104,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 //         };
 //     });
 
-var jwtKey = builder.Configuration["Jwt:Key"]!;
+var jwtKey = builder.Configuration["Jwt:Secret"]!;
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
