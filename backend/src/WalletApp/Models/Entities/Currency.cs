@@ -10,7 +10,7 @@ public class Currency : AuditableEntity
 
     public required string Symbol { get; set; }
 
-    public required string IconUrl { get; set; }
+    public required string CountryCode { get; set; }
 
     public int DecimalPlaces { get; set; }
 
