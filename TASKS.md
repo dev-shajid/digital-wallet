@@ -28,12 +28,12 @@ If tasks are distributed immediately:
 ```mermaid
 flowchart TD
     subgraph Phase0["Phase 0: First Developer / Lead (MUST DO FIRST)"]
-        P0["Task 0: Shared Architecture & Contract Foundation<br/>• Controllers & Routing (/api/v1)<br/>• ICurrentUser & StubCurrentUser<br/>• IWalletLedger Interface & DTOs<br/>• IBankClient Interface & DTOs<br/>• Common FailureCodes & Pagination Models<br/>• Swagger Bearer Auth Setup<br/>• Integration Test Harness"]
+        P0["Task 0: Shared Architecture & Contract Foundation<br/>• Controllers & Routing (/api/v1)<br/>• ICurrentUser & Claims Identity<br/>• IWalletLedger Interface & DTOs<br/>• IBankClient Interface & DTOs<br/>• Common FailureCodes & Pagination Models<br/>• Swagger Bearer Auth Setup<br/>• Integration Test Harness"]
     end
 
     subgraph Phase1["Phase 1: Core Domain Modules (Distributed in Parallel)"]
         T1["Task 1: Auth & User Management<br/>(Owner: Dev A)"]
-        T2["Task 2: Currency & Wallet Management<br/>(Owner: Dev B — uses StubCurrentUser)"]
+        T2["Task 2: Currency & Wallet Management<br/>(Owner: Dev B)"]
         T3["Task 3: Transaction Core & Ledger Implementation<br/>(Owner: Dev C — implements IWalletLedger)"]
         T4["Task 4: Mock Bank Service<br/>(Owner: Dev D — separate project)"]
         T5["Task 5: Frontend Scaffold & Client<br/>(Owner: Dev E — uses API contracts)"]
@@ -92,18 +92,9 @@ flowchart TD
     - Mapped controllers (`app.MapControllers()`).
   - Configured Swagger for JWT Bearer Authentication (`SecurityDefinition` + `SecurityRequirement`) so all Swagger endpoints support bearer tokens.
 
-* **0.2 Shared Contracts & Application Abstractions (`Wallet.Application/Common`):**
-  - **`ICurrentUser` Interface & Development Stub:**
-    - Create `ICurrentUser` interface:
-      ```csharp
-      public interface ICurrentUser
-      {
-          Guid? UserId { get; }
-          string? Role { get; }
-          bool IsAuthenticated { get; }
-      }
-      ```
-    - Provide `StubCurrentUser` in `Wallet.Application` (or `Wallet.Infrastructure`) registered in DI so Dev B (Wallets) and Dev C (Transactions) can develop and test immediately before Dev A finishes Auth.
+* **0.2 Shared Contracts & Application Abstractions (`Wallet.Application/Common`): [COMPLETED]**
+  - **`ICurrentUser` Interface & Service:**
+    - Real `CurrentUser` service registered in DI reading authenticated claims from `IHttpContextAccessor`.
   - **`IWalletLedger` Contract & DTOs:**
     - Define the core ledger contract:
       ```csharp
@@ -163,30 +154,24 @@ flowchart TD
 
 > **All tasks in this phase can start simultaneously once Phase 0 is merged.**
 
-#### Task 1: Auth & User Management
-* **Assignee:** Developer A
-* **Dependencies:** Task 0
+#### Task 1: Auth & User Management: [COMPLETED]
 * **Scope:**
   - Endpoints: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`.
-  - Password hashing using ASP.NET Core `PasswordHasher<User>` or Argon2/BCrypt.
-  - Generate JWT access tokens with `sub` (`userId`), `email`, `role`, and `accountNo` claims.
-  - System `accountNo` generator service:
-    - 10 digits, random, last digit calculated via Luhn check digit algorithm.
-    - Unique and immutable, behind `IAccountNumberGenerator`.
-  - **Registration atomic transaction:**
-    - Within a single DB transaction: insert `User` AND default `Wallet` in `BDT` with balance `0`.
-  - Replace `StubCurrentUser` with production `CurrentUser` extracting claims from `HttpContextAccessor`.
-  - Seed initial Admin user via configuration/user-secrets.
-* **Deliverable:** Working Auth module with unit and integration tests.
+  - Cryptographic password hashing using PBKDF2 with SHA-256 (`IPasswordHasher` / `PasswordHasher`).
+  - JWT access token generation with `sub` (`userId`), `email`, `role`, and `accountNo` claims.
+  - System `accountNo` generator: 12 characters (`AC` prefix + 10 digits, 10th numeric digit computed via Luhn check digit algorithm (`IAccountNumberGenerator`)).
+  - Atomic registration transaction: creates `User` AND default `BDT` wallet with balance 0 in a single DB transaction.
+  - Production `CurrentUser` service reading claims directly from `IHttpContextAccessor`.
+  - Unit test suite covering account number generator (Luhn check digit validation) and password hasher.
 
 #### Task 2: Currency & Wallet Management
 * **Assignee:** Developer B
-* **Dependencies:** Task 0 (Uses `StubCurrentUser` for authentication context during development)
+* **Dependencies:** Task 0, Task 1
 * **Scope:**
   - **Currency Endpoints (Admin only for mutations):**
     - `GET /api/v1/currencies` (authenticated users can read active currencies).
     - `POST /api/v1/currencies` (admin: create currency).
-    - `PUT /api/v1/currencies/{id}` (admin: update name, symbol, iconUrl, decimalPlaces).
+    - `PUT /api/v1/currencies/{id}` (admin: update name, symbol, countryCode, decimalPlaces).
     - `PATCH /api/v1/currencies/{id}/status` (admin: activate / inactivate).
     - Delete protection: Currencies referenced by existing wallets cannot be deleted (`409 Conflict`).
   - **Wallet Endpoints:**

@@ -18,6 +18,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerDocumentation();
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
@@ -30,6 +31,9 @@ app.UseSerilogRequestLogging();
 app.UseApiMiddleware();
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Json(ApiResponse<object?>.Ok(null, "Service is healthy.")))
     .ExcludeFromDescription();

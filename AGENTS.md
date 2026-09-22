@@ -48,7 +48,7 @@ A user can only access their own wallets, transactions and expenses. Regular use
 ## 3. Functional Requirements (PRD)
 
 ### 3.1 Auth & Users
-- Register (name, email, password). Email unique. System generates a unique immutable `accountNo` (10 digits, random, last digit Luhn check digit).
+- Register (name, email, password). Email unique. System generates a unique immutable `accountNo` (12 characters: `AC` prefix + 10 digits, last digit Luhn check digit).
 - Login/logout with token-based auth. Protected endpoints reject unauthenticated calls.
 - On registration, create the user **and** a BDT wallet in one DB transaction.
 

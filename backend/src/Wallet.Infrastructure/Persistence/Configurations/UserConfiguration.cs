@@ -23,7 +23,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.AccountNo)
             .IsRequired()
-            .HasMaxLength(10);
+            .HasMaxLength(12);
 
         builder.HasIndex(u => u.AccountNo)
             .IsUnique();

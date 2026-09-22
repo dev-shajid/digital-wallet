@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using Wallet.Application.Common.Interfaces;
 using Wallet.Domain.Common;
 using Wallet.Domain.Entities;
 
 namespace Wallet.Infrastructure.Persistence;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options), IAppDbContext
 {
     public DbSet<User> Users => Set<User>();
 
@@ -40,6 +42,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         ApplyTimestamps();
         return base.SaveChangesAsync(cancellationToken);
+    }
+
+    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        return Database.BeginTransactionAsync(cancellationToken);
     }
 
     private void ApplyTimestamps()
