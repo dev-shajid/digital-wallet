@@ -15,6 +15,7 @@ namespace WalletSystem.Infrastructure.Persistence;
 public class WalletDbContext(DbContextOptions<WalletDbContext> options) : DbContext(options)
 {
     public DbSet<User> Users => Set<User>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Currency> Currencies => Set<Currency>();
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
@@ -31,5 +32,8 @@ public class WalletDbContext(DbContextOptions<WalletDbContext> options) : DbCont
         // Loads every IEntityTypeConfiguration<T> class in this project (the files under
         // Persistence/Configurations/) instead of listing them one by one here.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(WalletDbContext).Assembly);
+
+        // Backs the "AC"-prefixed account numbers generated in AccountNumberGenerator.
+        modelBuilder.HasSequence<long>("account_no_seq").StartsAt(1).IncrementsBy(1);
     }
 }

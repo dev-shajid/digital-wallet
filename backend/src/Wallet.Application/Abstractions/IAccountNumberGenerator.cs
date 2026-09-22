@@ -2,6 +2,6 @@ namespace WalletSystem.Application.Abstractions;
 
 public interface IAccountNumberGenerator
 {
-    string GenerateAccountNumber();
+    Task<string> GenerateAccountNumberAsync(CancellationToken ct = default);
     bool ValidateAccountNumber(string accountNumber);
 }

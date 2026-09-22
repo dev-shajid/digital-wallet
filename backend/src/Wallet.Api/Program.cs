@@ -40,6 +40,19 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfig
 builder.Services.AddControllers(options =>
     options.Conventions.Add(new ApiPrefixConvention("api/v1")));
 
+// Lets the Next.js frontend (a different origin in dev) call this API from the browser.
+// The JWT travels as an Authorization header, not a cookie, so credentials aren't needed.
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:3000"];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy => policy
+        .WithOrigins(corsOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
+
 // [ApiController]'s automatic input validation is converted into the same
 // ApiResponse<T> envelope used by the rest of the API.
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -110,6 +123,11 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // Without this, the handler silently remaps short claim names ("sub", "role") to
+        // long legacy URIs depending on the IdentityModel version, which makes reading
+        // claims back (see ClaimsPrincipalExtensions.GetUserId) version-fragile.
+        options.MapInboundClaims = false;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -205,6 +223,8 @@ if (app.Environment.IsDevelopment())
         () => Results.Redirect("/swagger"))
         .ExcludeFromDescription();
 }
+
+app.UseCors("Frontend");
 
 // JWT authentication must run before authorization.
 app.UseAuthentication();
