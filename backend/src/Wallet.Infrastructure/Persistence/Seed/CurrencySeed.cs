@@ -15,7 +15,7 @@ internal static class CurrencySeed
         Code = "BDT",
         Name = "Bangladeshi Taka",
         Symbol = "৳",
-        IconUrl = "",
+        CountryCode = "BD",
         DecimalPlaces = 2,
         Status = CurrencyStatus.ACTIVE,
         CreatedAt = SeedTimestamp,

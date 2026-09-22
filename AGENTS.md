@@ -53,7 +53,7 @@ A user can only access their own wallets, transactions and expenses. Regular use
 - On registration, create the user **and** a BDT wallet in one DB transaction.
 
 ### 3.2 Currency (admin)
-- Admin CRUD for currencies. Standard fields: ISO 4217 code, name, symbol, icon, decimal places, status.
+- Admin CRUD for currencies. Standard fields: ISO 4217 code, name, symbol, country code (ISO 3166-1), decimal places, status.
 - Currency in use is never hard-deleted; set `INACTIVE`.
 - `BDT` is seeded.
 
@@ -132,7 +132,7 @@ id            uuid PK
 code          string UNIQUE, immutable   (ISO 4217, e.g. BDT, USD)
 name          string
 symbol        string
-iconUrl       string
+countryCode   string                     (ISO 3166-1, e.g. BD)
 decimalPlaces int
 status        CurrencyStatus
 createdAt, updatedAt

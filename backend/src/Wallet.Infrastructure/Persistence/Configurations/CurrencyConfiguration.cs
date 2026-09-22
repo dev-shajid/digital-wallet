@@ -26,9 +26,9 @@ public class CurrencyConfiguration : IEntityTypeConfiguration<Currency>
             .IsRequired()
             .HasMaxLength(10);
 
-        builder.Property(c => c.IconUrl)
+        builder.Property(c => c.CountryCode)
             .IsRequired()
-            .HasMaxLength(500);
+            .HasMaxLength(3);
 
         builder.Property(c => c.DecimalPlaces)
             .IsRequired();
