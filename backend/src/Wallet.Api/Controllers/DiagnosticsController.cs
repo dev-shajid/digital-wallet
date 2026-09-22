@@ -8,7 +8,7 @@ namespace WalletSystem.Api.Controllers;
 [ApiController]
 [Route("diagnostics")]
 public class DiagnosticsController : ControllerBase
-{=
+{
     [HttpGet("health")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult GetHealth()

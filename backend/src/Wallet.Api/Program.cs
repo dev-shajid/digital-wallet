@@ -75,15 +75,6 @@ builder.Services.AddSwaggerGen(options =>
         Title = "Digital Wallet & Expense Management API",
         Version = "v1"
     });
-
-    // Pulls in the /// <summary> comments from controllers (see GenerateDocumentationFile
-    // in Wallet.Api.csproj) so Swagger UI shows real descriptions, not just route names.
-    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
-        options.IncludeXmlComments(xmlPath);
-    }
 });
 
 // Liveness = "is the process up" (no dependencies checked).
