@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Wallet.Application.Common.Interfaces;
 
 namespace Wallet.Infrastructure.Security;
@@ -6,21 +5,44 @@ namespace Wallet.Infrastructure.Security;
 public class AccountNumberGenerator : IAccountNumberGenerator
 {
     public const string Prefix = "AC";
+    public const long DefaultStartSequence = 100000001;
 
-    public string Generate()
+    private readonly IAppDbContext? _dbContext;
+
+    public AccountNumberGenerator()
     {
-        var digits = new int[10];
+    }
 
-        // First digit non-zero (1-9)
-        digits[0] = RandomNumberGenerator.GetInt32(1, 10);
+    public AccountNumberGenerator(IAppDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
 
-        // Digits 1 to 8 (0-9)
-        for (var i = 1; i < 9; i++)
+    public async Task<string> GenerateAsync(CancellationToken cancellationToken = default)
+    {
+        if (_dbContext == null)
         {
-            digits[i] = RandomNumberGenerator.GetInt32(0, 10);
+            throw new InvalidOperationException("IAppDbContext is required to generate sequential account numbers.");
         }
 
-        // Calculate Luhn check digit for position 9 (10th digit)
+        var seq = await _dbContext.NextAccountSequenceValueAsync(cancellationToken);
+        return FormatFromSequence(seq);
+    }
+
+    public string FormatFromSequence(long sequenceValue)
+    {
+        if (sequenceValue < 1 || sequenceValue > 999999999)
+        {
+            throw new ArgumentOutOfRangeException(nameof(sequenceValue), "Sequence value must fit within 9 digits.");
+        }
+
+        var baseString = sequenceValue.ToString("D9");
+        var digits = new int[10];
+        for (var i = 0; i < 9; i++)
+        {
+            digits[i] = baseString[i] - '0';
+        }
+
         var sum = 0;
         for (var i = 0; i < 9; i++)
         {

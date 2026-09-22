@@ -2,7 +2,9 @@ namespace Wallet.Application.Common.Interfaces;
 
 public interface IAccountNumberGenerator
 {
-    string Generate();
+    Task<string> GenerateAsync(CancellationToken cancellationToken = default);
+
+    string FormatFromSequence(long sequenceValue);
 
     bool Validate(string accountNumber);
 }

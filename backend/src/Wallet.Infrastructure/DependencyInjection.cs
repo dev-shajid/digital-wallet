@@ -23,7 +23,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
-        services.AddSingleton<IAccountNumberGenerator, AccountNumberGenerator>();
+        services.AddScoped<IAccountNumberGenerator, AccountNumberGenerator>();
 
         return services;
     }

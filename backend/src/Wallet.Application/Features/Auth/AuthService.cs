@@ -30,12 +30,7 @@ public class AuthService(
         var bdtCurrency = await dbContext.Currencies.FirstOrDefaultAsync(c => c.Code == "BDT", ct)
             ?? throw new InvalidOperationException("Default BDT currency is not configured in the database.");
 
-        string accountNo;
-        do
-        {
-            accountNo = accountNumberGenerator.Generate();
-        }
-        while (await dbContext.Users.AnyAsync(u => u.AccountNo == accountNo, ct));
+        var accountNo = await accountNumberGenerator.GenerateAsync(ct);
 
         var passwordHash = passwordHasher.HashPassword(request.Password);
 

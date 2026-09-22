@@ -27,4 +27,6 @@ public interface IAppDbContext
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
+
+    Task<long> NextAccountSequenceValueAsync(CancellationToken cancellationToken = default);
 }

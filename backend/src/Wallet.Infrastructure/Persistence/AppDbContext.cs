@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Wallet.Application.Common.Interfaces;
@@ -28,6 +29,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasSequence<long>("account_no_seq")
+            .StartsAt(100000001)
+            .IncrementsBy(1);
+
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
     }
@@ -47,6 +52,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
     {
         return Database.BeginTransactionAsync(cancellationToken);
+    }
+
+    public async Task<long> NextAccountSequenceValueAsync(CancellationToken cancellationToken = default)
+    {
+        await using var command = Database.GetDbConnection().CreateCommand();
+        command.CommandText = "SELECT nextval('account_no_seq')";
+        command.Transaction = Database.CurrentTransaction?.GetDbTransaction();
+
+        if (command.Connection?.State != ConnectionState.Open)
+        {
+            await command.Connection!.OpenAsync(cancellationToken);
+        }
+
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return Convert.ToInt64(result);
     }
 
     private void ApplyTimestamps()
