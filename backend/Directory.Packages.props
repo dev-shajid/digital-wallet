@@ -12,31 +12,27 @@
          package) to line up with the versions pinned below too, not just direct references. -->
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
-
   <ItemGroup>
     <!-- EF Core: the ORM (like Prisma/TypeORM/Sequelize in Node) -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <!-- Maps C# PascalCase (User, CreatedAt) to Postgres snake_case (user, created_at) -->
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
-
     <!-- Serilog: structured logging (like pino/winston in Node) -->
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageVersion Include="Serilog.Settings.Configuration" Version="10.0.1" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
-
     <!-- Health checks: readiness probe that pings Postgres -->
     <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
-
     <!-- Swagger/OpenAPI: like swagger-jsdoc + swagger-ui-express, generated from code.
          Pinned to the mature 6.x line on purpose: the newer 10.x line emits an OpenAPI
          "3.0.4" version string that its own bundled Swagger UI doesn't recognize yet
          ("Unable to render this definition... not a valid version field"). -->
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.9.0" />
-
     <!-- Testing: xUnit is the Jest/Mocha equivalent -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
     <PackageVersion Include="xunit" Version="2.9.3" />
