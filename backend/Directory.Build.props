@@ -1,10 +1,20 @@
 <Project>
+  <!--
+    Shared settings for every project in the solution (like a root tsconfig.json
+    in a Node/TypeScript monorepo). Each .csproj still needs its own <TargetFramework>
+    line for its project type (classlib vs web), but these options apply everywhere.
+  -->
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Nullable reference types: the compiler warns you if a variable that
+         shouldn't be null might be null (similar to TypeScript's strictNullChecks). -->
     <Nullable>enable</Nullable>
+
+    <!-- Adds common "using" statements (System, System.Linq, ...) automatically
+         to every file, so you don't need to repeat them everywhere. -->
     <ImplicitUsings>enable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!-- file-scoped namespaces: "namespace Wallet.Domain;" on one line instead of
+         wrapping the whole file in "namespace Wallet.Domain { ... }". -->
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 </Project>

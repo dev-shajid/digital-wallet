@@ -132,7 +132,7 @@ id            uuid PK
 code          string UNIQUE, immutable   (ISO 4217, e.g. BDT, USD)
 name          string
 symbol        string
-iconUrl       string
+countryCode       string
 decimalPlaces int
 status        CurrencyStatus
 createdAt, updatedAt
