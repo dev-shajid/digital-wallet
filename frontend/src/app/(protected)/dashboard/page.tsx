@@ -12,6 +12,7 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-semibold">Welcome, {user?.name}</h1>
         <p className="text-muted-foreground">Here&apos;s your account overview.</p>
       </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
@@ -32,6 +33,7 @@ export default function DashboardPage() {
           </CardHeader>
         </Card>
       </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Wallets & transactions</CardTitle>
@@ -41,6 +43,32 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
       </Card>
+
+      {user?.role === "ADMIN" && (
+        <div className="flex flex-col gap-4">
+          <h2 className="text-lg font-semibold">Admin overview</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Users</CardTitle>
+                <CardDescription>Coming soon</CardDescription>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Currencies</CardTitle>
+                <CardDescription>Coming soon</CardDescription>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Expense categories</CardTitle>
+                <CardDescription>Coming soon</CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -21,7 +21,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       hasHydrated: false,
       setSession: (session) => {
-        setAuthCookies(session.token, session.user.role)
+        setAuthCookies(session.token)
         set({
           user: session.user,
           token: session.token,
