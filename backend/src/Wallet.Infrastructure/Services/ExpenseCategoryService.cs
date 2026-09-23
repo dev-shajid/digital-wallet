@@ -79,6 +79,7 @@ public class ExpenseCategoryService : IExpenseCategoryService
             Id = Guid.NewGuid(),
             Name = normalized,
             Description = request.Description?.Trim() ?? string.Empty,
+            // New categories always start ACTIVE - clients cannot pick the status on create.
             Status = CategoryStatus.ACTIVE,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -131,6 +132,10 @@ public class ExpenseCategoryService : IExpenseCategoryService
 
         entity.Name = normalized;
         entity.Description = request.Description?.Trim() ?? string.Empty;
+        // request.Status is non-null because the [Required] validator already
+        // rejected null at the controller boundary; the fallback is just to
+        // satisfy the nullable-type compiler.
+        entity.Status = request.Status ?? CategoryStatus.ACTIVE;
         entity.UpdatedAt = DateTime.UtcNow;
 
         await SaveWithUniqueNameGuardAsync(ct);

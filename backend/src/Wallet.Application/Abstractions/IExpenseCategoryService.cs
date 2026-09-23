@@ -1,13 +1,12 @@
 using WalletSystem.Application.Common.Models;
 using WalletSystem.Application.ExpenseCategories.Models;
-using WalletSystem.Domain.Enums;
 
 namespace WalletSystem.Application.Abstractions;
 
 /// <summary>
-/// Admin-managed expense categories. New categories start ACTIVE; "deleting" means
-/// setting INACTIVE. Hard delete is intentionally not supported - the database's
-/// ON DELETE RESTRICT on expenses.category_id is the safety net.
+/// Expense categories. New rows always start ACTIVE; "removing" means flipping a
+/// row to INACTIVE through the update endpoint - the database's
+/// ON DELETE RESTRICT on expenses.category_id prevents hard deletes anyway.
 /// </summary>
 public interface IExpenseCategoryService
 {
@@ -17,9 +16,9 @@ public interface IExpenseCategoryService
     /// <summary>Any authenticated user: ACTIVE categories only. Ordered by name.</summary>
     Task<ApiResponse<List<ExpenseCategoryResponse>>> GetActiveAsync(CancellationToken ct = default);
 
+    /// <summary>Creates a new category. New rows always start ACTIVE - clients cannot pick the status on create.</summary>
     Task<ApiResponse<ExpenseCategoryResponse>> CreateAsync(ExpenseCategoryRequest request, CancellationToken ct = default);
 
-    Task<ApiResponse<ExpenseCategoryResponse>> UpdateAsync(Guid id, ExpenseCategoryRequest request, CancellationToken ct = default);
-
-    Task<ApiResponse<ExpenseCategoryResponse>> SetStatusAsync(Guid id, CategoryStatus status, CancellationToken ct = default);
+    /// <summary>Updates name, description, and status of an existing category in one call.</summary>
+    Task<ApiResponse<ExpenseCategoryResponse>> UpdateAsync(Guid id, ExpenseCategoryUpdateRequest request, CancellationToken ct = default);
 }
