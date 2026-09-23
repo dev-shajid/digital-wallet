@@ -2,7 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboardIcon, UserRoundIcon } from "lucide-react"
+import {
+  LayoutDashboardIcon,
+  UserRoundIcon,
+  WalletCardsIcon,
+} from "lucide-react"
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -13,6 +17,7 @@ import {
 
 const NAV_ITEMS = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboardIcon },
+  { title: "Wallets", url: "/wallets", icon: WalletCardsIcon },
   { title: "Profile", url: "/profile", icon: UserRoundIcon },
 ]
 

@@ -18,6 +18,7 @@ import {
 
 const PAGE_TITLES: Record<string, string> = {
   "/dashboard": "Dashboard",
+  "/wallets": "Wallets",
   "/profile": "Profile",
 }
 
