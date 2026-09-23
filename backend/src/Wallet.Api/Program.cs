@@ -14,6 +14,7 @@ using WalletSystem.Api.Middleware;
 using WalletSystem.Application.Common.Models;
 using WalletSystem.Infrastructure;
 using WalletSystem.Infrastructure.Authentication;
+using WalletSystem.Infrastructure.Persistence.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,7 +39,16 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfig
 // Every controller automatically gets "api/v1" glued onto the front of
 // its route through ApiPrefixConvention.
 builder.Services.AddControllers(options =>
-    options.Conventions.Add(new ApiPrefixConvention("api/v1")));
+    options.Conventions.Add(new ApiPrefixConvention("api/v1")))
+    .AddJsonOptions(options =>
+    {
+        // Accept enums as their string name (e.g. "ACTIVE", "INACTIVE") in both
+        // directions - keeps the wire format human-readable and matches the
+        // string conversion used in the EF Core configurations.
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
+
 
 // Lets the Next.js frontend (a different origin in dev) call this API from the browser.
 // The JWT travels as an Authorization header, not a cookie, so credentials aren't needed.
@@ -231,6 +241,16 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// ---- Dev-only seed: admin user for Swagger --------------------------------
+if (AdminSeed.ShouldSeed(builder.Configuration))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<WalletSystem.Infrastructure.Persistence.WalletDbContext>();
+    var hasher = scope.ServiceProvider.GetRequiredService<WalletSystem.Application.Abstractions.IPasswordHasher>();
+    await AdminSeed.EnsureSeededAsync(db, hasher);
+    Log.Information("Seed admin present (email={Email}). To disable, remove Admin:Seed from configuration.", AdminSeed.SeedEmail);
+}
 
 // ---- Health Endpoints ----------------------------------------------------
 

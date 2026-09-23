@@ -1,13 +1,21 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using WalletSystem.Application.Abstractions;
+using WalletSystem.Application.Common.Exceptions;
 using WalletSystem.Application.Common.Models;
-using WalletSystem.Application.Expenses;
-using WalletSystem.Application.Expenses.Models;
+using WalletSystem.Application.ExpenseCategories.Models;
 using WalletSystem.Domain.Entities;
 using WalletSystem.Domain.Enums;
 using WalletSystem.Infrastructure.Persistence;
 
 namespace WalletSystem.Infrastructure.Services;
 
+/// <summary>
+/// CRUD for expense categories. Stays thin: validation, DB write, mapping to
+/// <see cref="ExpenseCategoryResponse"/>. No balance math here - that lives in
+/// ExpenseService (separate task).
+/// </summary>
 public class ExpenseCategoryService : IExpenseCategoryService
 {
     private readonly WalletDbContext _dbContext;
@@ -16,144 +24,196 @@ public class ExpenseCategoryService : IExpenseCategoryService
     {
         _dbContext = dbContext;
     }
-    public async Task<ApiResponse<List<ExpenseCategoryResponse>>> GetAllAsync(CancellationToken ct = default)
+
+    public async Task<ApiResponse<List<ExpenseCategoryResponse>>> GetAllAsync(
+        CancellationToken ct = default)
     {
-        var categories = await _dbContext.ExpenseCategories
+        var rows = await _dbContext.ExpenseCategories
+            .AsNoTracking()
             .OrderBy(c => c.Name)
-            .Select(c => MapToResponse(c))
             .ToListAsync(ct);
 
-        return new ApiResponse<List<ExpenseCategoryResponse>>
-        {
-            Success = true,
-            Status = 200,
-            Message = "Categories retrieved successfully.",
-            Data = categories
-        };
+        return Ok(rows.Select(ToResponse).ToList());
     }
 
-    public async Task<ApiResponse<List<ExpenseCategoryResponse>>> GetActiveAsync(CancellationToken ct = default)
+    public async Task<ApiResponse<List<ExpenseCategoryResponse>>> GetActiveAsync(
+        CancellationToken ct = default)
     {
-        var categories = await _dbContext.ExpenseCategories
+        var rows = await _dbContext.ExpenseCategories
+            .AsNoTracking()
             .Where(c => c.Status == CategoryStatus.ACTIVE)
             .OrderBy(c => c.Name)
-            .Select(c => MapToResponse(c))
             .ToListAsync(ct);
 
-        return new ApiResponse<List<ExpenseCategoryResponse>>
-        {
-            Success = true,
-            Status = 200,
-            Message = "Active categories retrieved successfully.",
-            Data = categories
-        };
+        return Ok(rows.Select(ToResponse).ToList());
     }
 
-    public async Task<ApiResponse<ExpenseCategoryResponse>> CreateAsync(ExpenseCategoryRequest request, CancellationToken ct = default)
+    public async Task<ApiResponse<ExpenseCategoryResponse>> CreateAsync(
+        ExpenseCategoryRequest request,
+        CancellationToken ct = default)
     {
-        var name = request.Name?.Trim() ?? string.Empty;
+        var normalized = (request.Name ?? string.Empty).Trim();
 
-        if (string.IsNullOrWhiteSpace(name))
+        if (string.IsNullOrWhiteSpace(normalized))
         {
-            return Fail(400, "Category name is required.");
+            throw DomainException.BadRequest(
+                "Category name is required.",
+                field: nameof(request.Name));
         }
 
-        var exists = await _dbContext.ExpenseCategories
-            .AnyAsync(c => c.Name.ToLower() == name.ToLower(), ct);
+        var taken = await _dbContext.ExpenseCategories
+            .AsNoTracking()
+            .AnyAsync(
+                c => c.Name.ToLower() == normalized.ToLower(),
+                ct);
 
-        if (exists)
+        if (taken)
         {
-            return Fail(409, "A category with this name already exists.");
+            throw DomainException.Conflict(
+                $"An expense category named '{normalized}' already exists.",
+                field: nameof(request.Name));
         }
 
-        var category = new ExpenseCategory
+        var entity = new ExpenseCategory
         {
             Id = Guid.NewGuid(),
-            Name = name,
-            Description = request.Description ?? string.Empty,
-            Status = CategoryStatus.ACTIVE
+            Name = normalized,
+            Description = request.Description?.Trim() ?? string.Empty,
+            Status = CategoryStatus.ACTIVE,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
-        _dbContext.ExpenseCategories.Add(category);
-        await _dbContext.SaveChangesAsync(ct);
+        _dbContext.ExpenseCategories.Add(entity);
+        await SaveWithUniqueNameGuardAsync(ct);
 
         return new ApiResponse<ExpenseCategoryResponse>
         {
             Success = true,
-            Status = 201,
-            Message = "Category created successfully.",
-            Data = MapToResponse(category)
+            Status = StatusCodes.Status201Created,
+            Message = "Expense category created successfully.",
+            Data = ToResponse(entity)
         };
     }
 
-    public async Task<ApiResponse<ExpenseCategoryResponse>> UpdateAsync(Guid id, ExpenseCategoryRequest request, CancellationToken ct = default)
+    public async Task<ApiResponse<ExpenseCategoryResponse>> UpdateAsync(
+        Guid id,
+        ExpenseCategoryRequest request,
+        CancellationToken ct = default)
     {
-        var category = await _dbContext.ExpenseCategories.FirstOrDefaultAsync(c => c.Id == id, ct);
-        if (category is null)
+        var entity = await _dbContext.ExpenseCategories
+            .FirstOrDefaultAsync(c => c.Id == id, ct)
+            ?? throw DomainException.NotFound(
+                $"No expense category with id {id}.");
+
+        var normalized = (request.Name ?? string.Empty).Trim();
+
+        if (string.IsNullOrWhiteSpace(normalized))
         {
-            return Fail(404, "Category not found.");
+            throw DomainException.BadRequest(
+                "Category name is required.",
+                field: nameof(request.Name));
         }
 
-        var name = request.Name?.Trim() ?? string.Empty;
-        if (string.IsNullOrWhiteSpace(name))
+        var taken = await _dbContext.ExpenseCategories
+            .AsNoTracking()
+            .AnyAsync(
+                c => c.Id != id &&
+                     c.Name.ToLower() == normalized.ToLower(),
+                ct);
+
+        if (taken)
         {
-            return Fail(400, "Category name is required.");
+            throw DomainException.Conflict(
+                $"An expense category named '{normalized}' already exists.",
+                field: nameof(request.Name));
         }
 
-        var nameTaken = await _dbContext.ExpenseCategories
-            .AnyAsync(c => c.Id != id && c.Name.ToLower() == name.ToLower(), ct);
+        entity.Name = normalized;
+        entity.Description = request.Description?.Trim() ?? string.Empty;
+        entity.UpdatedAt = DateTime.UtcNow;
 
-        if (nameTaken)
-        {
-            return Fail(409, "A category with this name already exists.");
-        }
-
-        category.Name = name;
-        category.Description = request.Description ?? string.Empty;
-
-        await _dbContext.SaveChangesAsync(ct);
+        await SaveWithUniqueNameGuardAsync(ct);
 
         return new ApiResponse<ExpenseCategoryResponse>
         {
             Success = true,
-            Status = 200,
-            Message = "Category updated successfully.",
-            Data = MapToResponse(category)
+            Status = StatusCodes.Status200OK,
+            Message = "Expense category updated successfully.",
+            Data = ToResponse(entity)
         };
     }
 
-    public async Task<ApiResponse<ExpenseCategoryResponse>> SetStatusAsync(Guid id, CategoryStatus status, CancellationToken ct = default)
+    public async Task<ApiResponse<ExpenseCategoryResponse>> SetStatusAsync(
+        Guid id,
+        CategoryStatus status,
+        CancellationToken ct = default)
     {
-        var category = await _dbContext.ExpenseCategories.FirstOrDefaultAsync(c => c.Id == id, ct);
-        if (category is null)
+        var entity = await _dbContext.ExpenseCategories
+            .FirstOrDefaultAsync(c => c.Id == id, ct)
+            ?? throw DomainException.NotFound(
+                $"No expense category with id {id}.");
+
+        if (entity.Status != status)
         {
-            return Fail(404, "Category not found.");
+            entity.Status = status;
+            entity.UpdatedAt = DateTime.UtcNow;
+
+            await _dbContext.SaveChangesAsync(ct);
         }
 
-        category.Status = status;
-        await _dbContext.SaveChangesAsync(ct);
+        var verb = status == CategoryStatus.INACTIVE
+            ? "deactivated"
+            : "activated";
 
         return new ApiResponse<ExpenseCategoryResponse>
         {
             Success = true,
-            Status = 200,
-            Message = $"Category status updated to {status}.",
-            Data = MapToResponse(category)
+            Status = StatusCodes.Status200OK,
+            Message = $"Expense category {verb} successfully.",
+            Data = ToResponse(entity)
         };
     }
 
-    private static ExpenseCategoryResponse MapToResponse(ExpenseCategory c) => new()
+    /// <summary>
+    /// Saves and turns the EF unique-violation (Postgres SQLSTATE 23505)
+    /// into a 409 DomainException.
+    /// </summary>
+    private async Task SaveWithUniqueNameGuardAsync(CancellationToken ct)
     {
-        Id = c.Id,
-        Name = c.Name,
-        Description = c.Description,
-        Status = c.Status.ToString()
-    };
+        try
+        {
+            await _dbContext.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+            when (ex.InnerException is PostgresException pg &&
+                  pg.SqlState == "23505")
+        {
+            throw DomainException.Conflict(
+                "An expense category with that name already exists.",
+                field: "name");
+        }
+    }
 
-    private static ApiResponse<ExpenseCategoryResponse> Fail(int status, string message) => new()
-    {
-        Success = false,
-        Status = status,
-        Message = message
-    };
+    private static ApiResponse<List<ExpenseCategoryResponse>> Ok(
+        List<ExpenseCategoryResponse> data)
+        => new()
+        {
+            Success = true,
+            Status = StatusCodes.Status200OK,
+            Message = "Request completed successfully.",
+            Data = data
+        };
+
+    private static ExpenseCategoryResponse ToResponse(
+        ExpenseCategory c)
+        => new()
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Description = c.Description,
+            Status = c.Status.ToString(),
+            CreatedAt = c.CreatedAt,
+            UpdatedAt = c.UpdatedAt
+        };
 }

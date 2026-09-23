@@ -45,6 +45,9 @@ public static class DependencyInjection
         services.AddScoped<IExpenseCategoryService, ExpenseCategoryService>();
         services.AddScoped<IExpenseService, ExpenseService>();
 
+        // Expense category admin CRUD
+        services.AddScoped<IExpenseCategoryService, ExpenseCategoryService>();
+
         return services;
     }
 }
