@@ -3,11 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using WalletSystem.Api.Common;
 using WalletSystem.Application.Expenses;
 using WalletSystem.Application.Expenses.Models;
+using WalletSystem.Domain.Enums;
 
 namespace WalletSystem.Api.Controllers;
 
+// Admins don't have a personal wallet to spend from - same restriction as
+// WalletsController.
 [ApiController]
-[Authorize]
+[Authorize(Roles = nameof(Role.USER))]
 [Route("expenses")]
 public class ExpensesController : ControllerBase
 {

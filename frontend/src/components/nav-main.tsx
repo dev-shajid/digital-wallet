@@ -4,7 +4,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   ArrowLeftRightIcon,
+  HistoryIcon,
   LayoutDashboardIcon,
+  ReceiptIcon,
   ShapesIcon,
   UserRoundIcon,
   WalletCardsIcon,
@@ -18,16 +20,23 @@ import {
 } from "@/components/ui/sidebar"
 import { useAuthStore } from "@/store/auth-store"
 
-// Every user gets these. "Transactions" covers every kind of money movement
-// (expenses now, P2P transfers later) in one list - see the transactions page
-// for how new transaction types get added to it.
-const NAV_ITEMS = [
+// Shown to everyone, regardless of role.
+const COMMON_NAV_ITEMS = [
   { title: "Dashboard", url: "/", icon: LayoutDashboardIcon },
-  { title: "Wallets", url: "/wallets", icon: WalletCardsIcon },
-  { title: "Transactions", url: "/transactions", icon: ArrowLeftRightIcon },
-  { title: "Profile", url: "/profile", icon: UserRoundIcon },
 ]
 
+// Admins don't have a personal wallet to manage - they manage users and
+// system settings instead - so these money-movement pages are user-only.
+const USER_NAV_ITEMS = [
+  { title: "Wallets", url: "/wallets", icon: WalletCardsIcon },
+  { title: "Transactions", url: "/transactions", icon: HistoryIcon },
+  { title: "Expenses", url: "/expenses", icon: ReceiptIcon },
+  { title: "Transfers", url: "/transfers", icon: ArrowLeftRightIcon },
+]
+
+// TODO: add a "Users" item here (list/manage users, view a user's
+// transactions) once that admin feature has a backend endpoint - it doesn't
+// exist yet.
 const ADMIN_NAV_ITEMS = [
   {
     title: "Expense Categories",
@@ -36,11 +45,19 @@ const ADMIN_NAV_ITEMS = [
   },
 ]
 
+const TRAILING_NAV_ITEMS = [
+  { title: "Profile", url: "/profile", icon: UserRoundIcon },
+]
+
 export function NavMain() {
   const pathname = usePathname()
   const role = useAuthStore((state) => state.user?.role)
 
-  const items = role === "ADMIN" ? [...NAV_ITEMS, ...ADMIN_NAV_ITEMS] : NAV_ITEMS
+  const items = [
+    ...COMMON_NAV_ITEMS,
+    ...(role === "ADMIN" ? ADMIN_NAV_ITEMS : USER_NAV_ITEMS),
+    ...TRAILING_NAV_ITEMS,
+  ]
 
   return (
     <SidebarGroup>

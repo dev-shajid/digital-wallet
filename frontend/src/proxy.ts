@@ -21,6 +21,8 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/",
   "/wallets",
   "/transactions",
+  "/expenses",
+  "/transfers",
   "/profile",
   "/admin",
 ]
