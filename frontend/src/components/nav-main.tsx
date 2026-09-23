@@ -3,8 +3,8 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
+  ArrowLeftRightIcon,
   LayoutDashboardIcon,
-  ReceiptIcon,
   ShapesIcon,
   UserRoundIcon,
   WalletCardsIcon,
@@ -18,13 +18,13 @@ import {
 } from "@/components/ui/sidebar"
 import { useAuthStore } from "@/store/auth-store"
 
-// Every user gets these. Money-movement features (expenses now, P2P transfers
-// later) each get their own top-level entry here rather than being nested
-// under one generic "Transactions" item.
+// Every user gets these. "Transactions" covers every kind of money movement
+// (expenses now, P2P transfers later) in one list - see the transactions page
+// for how new transaction types get added to it.
 const NAV_ITEMS = [
   { title: "Dashboard", url: "/", icon: LayoutDashboardIcon },
   { title: "Wallets", url: "/wallets", icon: WalletCardsIcon },
-  { title: "Expenses", url: "/expenses", icon: ReceiptIcon },
+  { title: "Transactions", url: "/transactions", icon: ArrowLeftRightIcon },
   { title: "Profile", url: "/profile", icon: UserRoundIcon },
 ]
 

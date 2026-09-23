@@ -28,6 +28,7 @@ export interface Expense {
   reference: string
   categoryName: string
   amount: number
+  currencyCode: string
   note: string | null
   expenseDate: string
   walletBalanceAfter: number
@@ -35,6 +36,7 @@ export interface Expense {
 }
 
 export interface CreateExpensePayload {
+  currencyId: string
   categoryId: string
   amount: number
   note?: string

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WalletSystem.Application.Abstractions;
 using WalletSystem.Application.Expenses;
+using WalletSystem.Application.Transactions;
 using WalletSystem.Infrastructure.Persistence;
 using WalletSystem.Infrastructure.Services;
 using WalletSystem.Infrastructure.Settings;
@@ -44,9 +45,7 @@ public static class DependencyInjection
         services.AddSingleton<IRefreshTokenGenerator, RefreshTokenGenerator>();
         services.AddScoped<IExpenseCategoryService, ExpenseCategoryService>();
         services.AddScoped<IExpenseService, ExpenseService>();
-
-        // Expense category admin CRUD
-        services.AddScoped<IExpenseCategoryService, ExpenseCategoryService>();
+        services.AddScoped<ITransactionService, TransactionService>();
 
         return services;
     }

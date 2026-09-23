@@ -30,6 +30,7 @@ public sealed class WalletService : IWalletService
             .Select(wallet => new WalletResponse
             {
                 Id = wallet.Id,
+                CurrencyId = wallet.CurrencyId,
                 CurrencyCode = wallet.Currency.Code,
                 CurrencyName = wallet.Currency.Name,
                 CurrencySymbol = wallet.Currency.Symbol,

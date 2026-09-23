@@ -24,10 +24,17 @@ public class ExpenseService : IExpenseService
             return Fail(400, "Amount must be greater than zero.");
         }
 
-        var wallet = await _dbContext.Wallets.FirstOrDefaultAsync(w => w.UserId == userId, ct);
+        if (request.CurrencyId == Guid.Empty)
+        {
+            return Fail(400, "Currency is required.");
+        }
+
+        var wallet = await _dbContext.Wallets
+            .Include(w => w.Currency)
+            .FirstOrDefaultAsync(w => w.UserId == userId && w.CurrencyId == request.CurrencyId, ct);
         if (wallet is null)
         {
-            return Fail(404, "Wallet not found.");
+            return Fail(404, "You don't have a wallet in that currency.");
         }
 
         if (wallet.Status != WalletStatus.ACTIVE)
@@ -60,7 +67,9 @@ public class ExpenseService : IExpenseService
                 $"SELECT id FROM wallets WHERE id = {wallet.Id} FOR UPDATE", ct);
 
             // Re-read after acquiring the lock.
-            var lockedWallet = await _dbContext.Wallets.FirstAsync(w => w.Id == wallet.Id, ct);
+            var lockedWallet = await _dbContext.Wallets
+                .Include(w => w.Currency)
+                .FirstAsync(w => w.Id == wallet.Id, ct);
 
             if (lockedWallet.Status != WalletStatus.ACTIVE)
             {
@@ -130,6 +139,7 @@ public class ExpenseService : IExpenseService
                     Reference = txnEntity.Reference,
                     CategoryName = category.Name,
                     Amount = txnEntity.Amount,
+                    CurrencyCode = lockedWallet.Currency.Code,
                     Note = txnEntity.Note,
                     ExpenseDate = expenseDate,
                     WalletBalanceAfter = balanceAfter,
@@ -142,34 +152,6 @@ public class ExpenseService : IExpenseService
             await transaction.RollbackAsync(ct);
             throw;
         }
-    }
-
-    public async Task<ApiResponse<List<ExpenseResponse>>> GetMyExpensesAsync(Guid userId, CancellationToken ct = default)
-    {
-        var expenses = await _dbContext.Transactions
-            .Where(t => t.UserId == userId && t.Type == TransactionType.EXPENSE)
-            .OrderByDescending(t => t.CreatedAt)
-            .Take(50)
-            .Select(t => new ExpenseResponse
-            {
-                TransactionId = t.Id,
-                Reference = t.Reference,
-                CategoryName = t.Expense!.Category!.Name,
-                Amount = t.Amount,
-                Note = t.Note,
-                ExpenseDate = t.Expense!.ExpenseDate,
-                WalletBalanceAfter = t.WalletLogs.First().BalanceAfter ?? 0m,
-                CreatedAt = t.CreatedAt
-            })
-            .ToListAsync(ct);
-
-        return new ApiResponse<List<ExpenseResponse>>
-        {
-            Success = true,
-            Status = 200,
-            Message = "Expenses retrieved successfully.",
-            Data = expenses
-        };
     }
 
     private static ApiResponse<ExpenseResponse> Fail(int status, string message) => new()

@@ -4,6 +4,8 @@ public sealed class WalletResponse
 {
     public Guid Id { get; init; }
 
+    public Guid CurrencyId { get; init; }
+
     public string CurrencyCode { get; init; } = string.Empty;
 
     public string CurrencyName { get; init; } = string.Empty;

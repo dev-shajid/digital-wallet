@@ -25,12 +25,4 @@ public class ExpensesController : ControllerBase
         var result = await _service.CreateExpenseAsync(userId, request, ct);
         return StatusCode(result.Status, result);
     }
-
-    [HttpGet]
-    public async Task<IActionResult> GetMine(CancellationToken ct)
-    {
-        var userId = User.GetUserId();
-        var result = await _service.GetMyExpensesAsync(userId, ct);
-        return StatusCode(result.Status, result);
-    }
 }

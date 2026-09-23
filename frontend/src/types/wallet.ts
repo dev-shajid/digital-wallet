@@ -2,6 +2,7 @@ export type WalletStatus = "ACTIVE" | "FROZEN" | "CLOSED"
 
 export interface Wallet {
   id: string
+  currencyId: string
   currencyCode: string
   currencyName: string
   currencySymbol: string
