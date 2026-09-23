@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountNumberGenerator, AccountNumberGenerator>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IWalletService, WalletService>();
         services.AddSingleton<IRefreshTokenGenerator, RefreshTokenGenerator>();
 
         return services;
