@@ -10,11 +10,8 @@ namespace WalletSystem.Application.Abstractions;
 /// </summary>
 public interface IExpenseCategoryService
 {
-    /// <summary>Admin: every category, regardless of status. Ordered by name.</summary>
-    Task<ApiResponse<List<ExpenseCategoryResponse>>> GetAllAsync(CancellationToken ct = default);
-
-    /// <summary>Any authenticated user: ACTIVE categories only. Ordered by name.</summary>
-    Task<ApiResponse<List<ExpenseCategoryResponse>>> GetActiveAsync(CancellationToken ct = default);
+    /// <summary>Role-aware list: admins see every status, regular users see only ACTIVE.</summary>
+    Task<ApiResponse<List<ExpenseCategoryResponse>>> GetForCallerAsync(bool isAdmin, CancellationToken ct = default);
 
     /// <summary>Creates a new category. New rows always start ACTIVE - clients cannot pick the status on create.</summary>
     Task<ApiResponse<ExpenseCategoryResponse>> CreateAsync(ExpenseCategoryRequest request, CancellationToken ct = default);

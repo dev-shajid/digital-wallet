@@ -9,14 +9,14 @@ using WalletSystem.Application.ExpenseCategories.Models;
 namespace WalletSystem.Api.Controllers;
 
 /// <summary>
-/// All expense-category endpoints live here. The class-level route is omitted on
-/// purpose: each action declares its own absolute path so the two routes
-/// (<c>/expense-categories</c> for users and <c>/admin/expense-categories</c> for
-/// managers) can sit side by side without colliding. Authorization is per-route:
-/// any authenticated user can list ACTIVE categories; only an admin can list
-/// every status, create, or update.
+/// Expense-category endpoints. The URL has no "admin" segment - whether a
+/// caller gets the full list or just the ACTIVE subset is decided by their
+/// JWT role, not their path. Posting and updating are reserved for admins
+/// through <see cref="AuthorizeAttribute"/>; the GET serves both roles but
+/// returns a different result depending on who is calling.
 /// </summary>
 [ApiController]
+[Route("expense-categories")]
 public class ExpenseCategoriesController : ControllerBase
 {
     private readonly IExpenseCategoryService _service;
@@ -26,31 +26,26 @@ public class ExpenseCategoriesController : ControllerBase
         _service = service;
     }
 
-    /// <summary>Returns ACTIVE categories only. Any authenticated user.</summary>
-    [HttpGet("expense-categories")]
+    /// <summary>
+    /// Lists categories. Returns ACTIVE only to a regular user, every status
+    /// to an admin - same endpoint, role-aware payload.
+    /// </summary>
+    [HttpGet]
     [Authorize]
     [ProducesResponseType(typeof(ApiResponse<List<ExpenseCategoryResponse>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse<List<ExpenseCategoryResponse>>>> GetActive(CancellationToken ct)
+    public async Task<ActionResult<ApiResponse<List<ExpenseCategoryResponse>>>> List(CancellationToken ct)
     {
-        try { return Ok((await _service.GetActiveAsync(ct)).Data!); }
-        catch (DomainException ex) { return ex.ToActionResult(this); }
-    }
-
-    /// <summary>Returns every category, including INACTIVE ones. Admins only.</summary>
-    [HttpGet("admin/expense-categories")]
-    [Authorize(Roles = "ADMIN")]
-    [ProducesResponseType(typeof(ApiResponse<List<ExpenseCategoryResponse>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult<ApiResponse<List<ExpenseCategoryResponse>>>> GetAll(CancellationToken ct)
-    {
-        try { return Ok((await _service.GetAllAsync(ct)).Data!); }
+        try
+        {
+            var result = await _service.GetForCallerAsync(isAdmin: User.IsInRole("ADMIN"), ct);
+            return StatusCode(result.Status, result);
+        }
         catch (DomainException ex) { return ex.ToActionResult(this); }
     }
 
     /// <summary>Creates a new category. New rows always start ACTIVE.</summary>
-    [HttpPost("admin/expense-categories")]
+    [HttpPost]
     [Authorize(Roles = "ADMIN")]
     [ProducesResponseType(typeof(ApiResponse<ExpenseCategoryResponse>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status400BadRequest)]
@@ -73,7 +68,7 @@ public class ExpenseCategoriesController : ControllerBase
     /// Updates a category's name, description, and status in one call.
     /// There is no separate status endpoint - deactivation lives here too.
     /// </summary>
-    [HttpPut("admin/expense-categories/{id:guid}")]
+    [HttpPut("{id:guid}")]
     [Authorize(Roles = "ADMIN")]
     [ProducesResponseType(typeof(ApiResponse<ExpenseCategoryResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status400BadRequest)]
