@@ -1,24 +1,5 @@
 namespace WalletSystem.Application.Expenses.Models;
 
-public class ExpenseCategoryRequest
-{
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-}
-
-public class ExpenseCategoryResponse
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string Status { get; set; } = string.Empty; // ACTIVE / INACTIVE
-}
-
-public class UpdateCategoryStatusRequest
-{
-    public string Status { get; set; } = string.Empty; // "ACTIVE" | "INACTIVE"
-}
-
 public class CreateExpenseRequest
 {
     public Guid CategoryId { get; set; }

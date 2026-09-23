@@ -32,7 +32,7 @@ public class AuthController : ControllerBase
     /// temporarily in cache, and sends a 6-digit OTP to the provided email.
     /// No user is created in the database at this point.
     /// </summary>
-    [HttpPost("initiate-registration")]
+    [HttpPost("registration")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]

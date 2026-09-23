@@ -4,26 +4,28 @@ using WalletSystem.Domain.Enums;
 namespace WalletSystem.Application.ExpenseCategories.Models;
 
 /// <summary>
-/// Body for PUT <c>/admin/expense-categories/{id}</c>. Updates name, description,
-/// and status in a single call so renaming a category and (de)activating it is
-/// one round trip instead of two. Status is required: callers must explicitly
-/// say which state they want the row in.
+/// Body for PUT <c>/admin/expense-categories/{id}</c>. Every field is optional -
+/// only the ones actually sent are changed - but at least one of them must be
+/// present, otherwise there's nothing to update.
 /// </summary>
-public class ExpenseCategoryUpdateRequest
+public class ExpenseCategoryUpdateRequest : IValidatableObject
 {
-    [Required(ErrorMessage = "Name is required.")]
     [StringLength(100, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 100 characters.")]
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; }
 
     [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters.")]
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
-    /// <summary>
-    /// Status string from the two allowed values. Nullable so a missing field
-    /// fails the <see cref="RequiredAttribute"/> check instead of silently
-    /// defaulting to <c>CategoryStatus.ACTIVE</c>.
-    /// </summary>
-    [Required(ErrorMessage = "Status is required.")]
     [EnumDataType(typeof(CategoryStatus), ErrorMessage = "Status must be either ACTIVE or INACTIVE.")]
     public CategoryStatus? Status { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Name is null && Description is null && Status is null)
+        {
+            yield return new ValidationResult(
+                "Provide at least one of Name, Description, or Status to update.",
+                [nameof(Name), nameof(Description), nameof(Status)]);
+        }
+    }
 }

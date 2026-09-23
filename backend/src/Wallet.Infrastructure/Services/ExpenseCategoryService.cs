@@ -25,23 +25,18 @@ public class ExpenseCategoryService : IExpenseCategoryService
         _dbContext = dbContext;
     }
 
-    public async Task<ApiResponse<List<ExpenseCategoryResponse>>> GetAllAsync(
+    public async Task<ApiResponse<List<ExpenseCategoryResponse>>> GetForCallerAsync(
+        bool isAdmin,
         CancellationToken ct = default)
     {
-        var rows = await _dbContext.ExpenseCategories
-            .AsNoTracking()
-            .OrderBy(c => c.Name)
-            .ToListAsync(ct);
+        var query = _dbContext.ExpenseCategories.AsNoTracking();
 
-        return Ok(rows.Select(ToResponse).ToList());
-    }
+        if (!isAdmin)
+        {
+            query = query.Where(c => c.Status == CategoryStatus.ACTIVE);
+        }
 
-    public async Task<ApiResponse<List<ExpenseCategoryResponse>>> GetActiveAsync(
-        CancellationToken ct = default)
-    {
-        var rows = await _dbContext.ExpenseCategories
-            .AsNoTracking()
-            .Where(c => c.Status == CategoryStatus.ACTIVE)
+        var rows = await query
             .OrderBy(c => c.Name)
             .ToListAsync(ct);
 
@@ -99,7 +94,7 @@ public class ExpenseCategoryService : IExpenseCategoryService
 
     public async Task<ApiResponse<ExpenseCategoryResponse>> UpdateAsync(
         Guid id,
-        ExpenseCategoryRequest request,
+        ExpenseCategoryUpdateRequest request,
         CancellationToken ct = default)
     {
         var entity = await _dbContext.ExpenseCategories
@@ -107,35 +102,46 @@ public class ExpenseCategoryService : IExpenseCategoryService
             ?? throw DomainException.NotFound(
                 $"No expense category with id {id}.");
 
-        var normalized = (request.Name ?? string.Empty).Trim();
-
-        if (string.IsNullOrWhiteSpace(normalized))
+        // Every field is optional here - only touch the ones the caller actually sent.
+        // ExpenseCategoryUpdateRequest.Validate already rejected a body with all three null.
+        if (request.Name is not null)
         {
-            throw DomainException.BadRequest(
-                "Category name is required.",
-                field: nameof(request.Name));
+            var normalized = request.Name.Trim();
+
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                throw DomainException.BadRequest(
+                    "Category name cannot be blank.",
+                    field: nameof(request.Name));
+            }
+
+            var taken = await _dbContext.ExpenseCategories
+                .AsNoTracking()
+                .AnyAsync(
+                    c => c.Id != id &&
+                         c.Name.ToLower() == normalized.ToLower(),
+                    ct);
+
+            if (taken)
+            {
+                throw DomainException.Conflict(
+                    $"An expense category named '{normalized}' already exists.",
+                    field: nameof(request.Name));
+            }
+
+            entity.Name = normalized;
         }
 
-        var taken = await _dbContext.ExpenseCategories
-            .AsNoTracking()
-            .AnyAsync(
-                c => c.Id != id &&
-                     c.Name.ToLower() == normalized.ToLower(),
-                ct);
-
-        if (taken)
+        if (request.Description is not null)
         {
-            throw DomainException.Conflict(
-                $"An expense category named '{normalized}' already exists.",
-                field: nameof(request.Name));
+            entity.Description = request.Description.Trim();
         }
 
-        entity.Name = normalized;
-        entity.Description = request.Description?.Trim() ?? string.Empty;
-        // request.Status is non-null because the [Required] validator already
-        // rejected null at the controller boundary; the fallback is just to
-        // satisfy the nullable-type compiler.
-        entity.Status = request.Status ?? CategoryStatus.ACTIVE;
+        if (request.Status is not null)
+        {
+            entity.Status = request.Status.Value;
+        }
+
         entity.UpdatedAt = DateTime.UtcNow;
 
         await SaveWithUniqueNameGuardAsync(ct);
@@ -145,37 +151,6 @@ public class ExpenseCategoryService : IExpenseCategoryService
             Success = true,
             Status = StatusCodes.Status200OK,
             Message = "Expense category updated successfully.",
-            Data = ToResponse(entity)
-        };
-    }
-
-    public async Task<ApiResponse<ExpenseCategoryResponse>> SetStatusAsync(
-        Guid id,
-        CategoryStatus status,
-        CancellationToken ct = default)
-    {
-        var entity = await _dbContext.ExpenseCategories
-            .FirstOrDefaultAsync(c => c.Id == id, ct)
-            ?? throw DomainException.NotFound(
-                $"No expense category with id {id}.");
-
-        if (entity.Status != status)
-        {
-            entity.Status = status;
-            entity.UpdatedAt = DateTime.UtcNow;
-
-            await _dbContext.SaveChangesAsync(ct);
-        }
-
-        var verb = status == CategoryStatus.INACTIVE
-            ? "deactivated"
-            : "activated";
-
-        return new ApiResponse<ExpenseCategoryResponse>
-        {
-            Success = true,
-            Status = StatusCodes.Status200OK,
-            Message = $"Expense category {verb} successfully.",
             Data = ToResponse(entity)
         };
     }

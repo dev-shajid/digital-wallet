@@ -65,7 +65,8 @@ public class ExpenseCategoriesController : ControllerBase
     }
 
     /// <summary>
-    /// Updates a category's name, description, and status in one call.
+    /// Updates a category's name, description, and/or status. Every field is
+    /// optional - only the ones sent are changed - but at least one is required.
     /// There is no separate status endpoint - deactivation lives here too.
     /// </summary>
     [HttpPut("{id:guid}")]
