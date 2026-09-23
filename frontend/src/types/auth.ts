@@ -22,11 +22,26 @@ export interface RefreshTokenPayload {
   refreshToken: string
 }
 
-export interface RegisterPayload {
+// Step 1 of registration: send form data, get OTP emailed
+export interface InitiateRegistrationPayload {
   name: string
   email: string
   password: string
 }
+
+// Step 2 of registration: submit the OTP, get JWT back
+export interface VerifyEmailPayload {
+  email: string
+  otp: string
+}
+
+// Resend a fresh OTP to the same email
+export interface ResendOtpPayload {
+  email: string
+}
+
+// Kept for anything else that still imports it
+export type RegisterPayload = InitiateRegistrationPayload
 
 export interface LoginPayload {
   email: string
@@ -45,3 +60,4 @@ export interface ApiResponse<T> {
   data: T | null
   errors: ApiError[] | null
 }
+
