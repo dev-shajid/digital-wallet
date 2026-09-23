@@ -31,6 +31,8 @@ public class EmailService : IEmailService
 
         using var client = new SmtpClient();
         
+        client.CheckCertificateRevocation = false;
+        
         await client.ConnectAsync(_smtpSettings.Host, _smtpSettings.Port, SecureSocketOptions.StartTls);
         await client.AuthenticateAsync(_smtpSettings.Username, _smtpSettings.Password);
         

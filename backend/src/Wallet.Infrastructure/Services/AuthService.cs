@@ -41,6 +41,67 @@ public class AuthService : IAuthService
         _jwtSettings = jwtOptions.Value;
     }
 
+    /// <summary>Returns true if a user with this normalised email already exists.</summary>
+    public async Task<bool> IsEmailTakenAsync(string normalizedEmail, CancellationToken ct = default)
+    {
+        return await _dbContext.Users
+            .AnyAsync(u => u.Email == normalizedEmail, ct);
+    }
+
+    /// <summary>
+    /// Creates the user + default BDT wallet + refresh token in one DB transaction using
+    /// pre-validated, pre-hashed data supplied by the OTP verification flow.
+    /// </summary>
+    public async Task<ApiResponse<LoginResponse>> CompleteRegistrationAsync(
+        PendingRegistrationData data, CancellationToken ct = default)
+    {
+        string accountNo = await _accountNumberGenerator.GenerateAccountNumberAsync(ct);
+
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Name = data.Name,
+            Email = data.Email,
+            AccountNo = accountNo,
+            PasswordHash = data.PasswordHash,   // already hashed by the controller
+            Role = Role.USER
+        };
+
+        var wallet = new Wallet
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            CurrencyId = CurrencySeed.BdtId,
+            Balance = 0m,
+            Status = WalletStatus.ACTIVE
+        };
+
+        var (session, refreshTokenEntity) = BuildSession(user);
+
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(ct);
+        try
+        {
+            await _dbContext.Users.AddAsync(user, ct);
+            await _dbContext.Wallets.AddAsync(wallet, ct);
+            await _dbContext.RefreshTokens.AddAsync(refreshTokenEntity, ct);
+            await _dbContext.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(ct);
+            throw;
+        }
+
+        return new ApiResponse<LoginResponse>
+        {
+            Success = true,
+            Status = StatusCodes.Status201Created,
+            Message = "Account created successfully.",
+            Data = session
+        };
+    }
+
     /// <summary>
     /// Atomically registers a new user and creates their default BDT wallet inside a single database transaction,
     /// then logs them in immediately by returning a JWT (plus refresh token) alongside the created profile.
