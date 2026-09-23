@@ -180,6 +180,37 @@ public class ExpenseCategoryService : IExpenseCategoryService
         };
     }
 
+    public async Task<ApiResponse<object?>> DeleteAsync(Guid id, CancellationToken ct = default)
+    {
+        var entity = await _dbContext.ExpenseCategories.FirstOrDefaultAsync(c => c.Id == id, ct)
+            ?? throw DomainException.NotFound($"No expense category with id {id}.");
+
+        // Pre-check the FK count so we return a friendly 409 instead of the raw
+        // Postgres 23503 (foreign_key_violation) from SaveChanges. The DB constraint
+        // is still the source of truth and would catch a race against a concurrent
+        // insert, but it can't say how many expenses blocked us.
+        var inUse = await _dbContext.Expenses
+            .AsNoTracking()
+            .CountAsync(e => e.CategoryId == id, ct);
+        if (inUse > 0)
+        {
+            throw DomainException.Conflict(
+                $"Cannot delete category '{entity.Name}' because it is referenced by {inUse} expense(s). " +
+                "Set Status to INACTIVE instead to hide it from new expenses while keeping history.");
+        }
+
+        _dbContext.ExpenseCategories.Remove(entity);
+        await _dbContext.SaveChangesAsync(ct);
+
+        return new ApiResponse<object?>
+        {
+            Success = true,
+            Status = StatusCodes.Status200OK,
+            Message = $"Expense category '{entity.Name}' deleted successfully.",
+            Data = new { id = entity.Id, name = entity.Name }
+        };
+    }
+
     /// <summary>
     /// Saves and turns the EF unique-violation (Postgres SQLSTATE 23505)
     /// into a 409 DomainException.

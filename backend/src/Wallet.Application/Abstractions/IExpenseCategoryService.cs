@@ -18,4 +18,11 @@ public interface IExpenseCategoryService
 
     /// <summary>Updates name, description, and status of an existing category in one call.</summary>
     Task<ApiResponse<ExpenseCategoryResponse>> UpdateAsync(Guid id, ExpenseCategoryUpdateRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Hard-deletes a category. Only succeeds when no expense references it (the schema
+    /// enforces ON DELETE RESTRICT); otherwise a 409 Conflict tells the caller to set
+    /// Status to INACTIVE instead so historical expenses stay readable.
+    /// </summary>
+    Task<ApiResponse<object?>> DeleteAsync(Guid id, CancellationToken ct = default);
 }

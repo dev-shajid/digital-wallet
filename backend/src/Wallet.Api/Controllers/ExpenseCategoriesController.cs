@@ -88,4 +88,27 @@ public class ExpenseCategoriesController : ControllerBase
         }
         catch (DomainException ex) { return ex.ToActionResult(this); }
     }
+
+    /// <summary>
+    /// Hard-deletes a category. Allowed only when no expense references it - the
+    /// database FK is ON DELETE RESTRICT, so a category with history must be set
+    /// INACTIVE through <c>PUT</c> instead. Returns 409 (not 400) with a hint on
+    /// how to deactivate.
+    /// </summary>
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "ADMIN")]
+    [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<object?>), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiResponse<object?>>> Delete(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _service.DeleteAsync(id, ct);
+            return StatusCode(result.Status, result);
+        }
+        catch (DomainException ex) { return ex.ToActionResult(this); }
+    }
 }
