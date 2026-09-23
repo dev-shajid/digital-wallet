@@ -28,6 +28,9 @@
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
     <!-- Health checks: readiness probe that pings Postgres -->
     <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
+
+    <!-- MailKit: SMTP client used by EmailService -->
+    <PackageVersion Include="MailKit" Version="4.8.0" />
     <!-- Swagger/OpenAPI: like swagger-jsdoc + swagger-ui-express, generated from code.
          Pinned to the mature 6.x line on purpose: the newer 10.x line emits an OpenAPI
          "3.0.4" version string that its own bundled Swagger UI doesn't recognize yet

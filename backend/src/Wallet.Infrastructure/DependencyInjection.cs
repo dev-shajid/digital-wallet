@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using WalletSystem.Application.Abstractions;
 using WalletSystem.Infrastructure.Persistence;
 using WalletSystem.Infrastructure.Services;
-
+using WalletSystem.Infrastructure.Settings;
 
 namespace WalletSystem.Infrastructure;
 
@@ -23,6 +23,16 @@ public static class DependencyInjection
                 // Converts C# PascalCase (CreatedAt) to Postgres snake_case (created_at)
                 // for every table and column automatically.
                 .UseSnakeCaseNamingConvention());
+
+        // Bind SMTP settings from appsettings.json
+        services.Configure<SmtpSettings>(configuration.GetSection("Smtp"));
+
+        // Register built-in In-Memory Cache
+        services.AddMemoryCache();
+
+        // Register Email and OTP Services
+        services.AddTransient<IEmailService, EmailService>();
+        services.AddScoped<IOtpService, OtpService>();
 
         // Authentication & Security Services
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
