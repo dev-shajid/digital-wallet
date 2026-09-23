@@ -9,6 +9,7 @@ using WalletSystem.Domain.Enums;
 using WalletSystem.Infrastructure.Authentication;
 using WalletSystem.Infrastructure.Persistence;
 using WalletSystem.Infrastructure.Persistence.Seed;
+using WalletSystem.Application.Transfers.Models;
 
 namespace WalletSystem.Infrastructure.Services;
 
@@ -378,4 +379,51 @@ public class AuthService : IAuthService
         Message = message,
         Data = null
     };
+
+    public async Task<ApiResponse<AccountLookupResponse>> LookupAccountAsync(
+        string accountNo,
+        CancellationToken ct = default)
+    {
+        string normalizedAccountNo = accountNo.Trim().ToUpperInvariant();
+
+        if (!_accountNumberGenerator.ValidateAccountNumber(normalizedAccountNo))
+        {
+            return new ApiResponse<AccountLookupResponse>
+            {
+                Success = false,
+                Status = StatusCodes.Status400BadRequest,
+                Message = "Invalid account number format.",
+                Data = null
+            };
+        }
+
+        var account = await _dbContext.Users
+            .AsNoTracking()
+            .Where(user => user.AccountNo == normalizedAccountNo)
+            .Select(user => new AccountLookupResponse
+            {
+                AccountNo = user.AccountNo,
+                Name = user.Name
+            })
+            .FirstOrDefaultAsync(ct);
+
+        if (account is null)
+        {
+            return new ApiResponse<AccountLookupResponse>
+            {
+                Success = false,
+                Status = StatusCodes.Status404NotFound,
+                Message = "No user was found with that account number.",
+                Data = null
+            };
+        }
+
+        return new ApiResponse<AccountLookupResponse>
+        {
+            Success = true,
+            Status = StatusCodes.Status200OK,
+            Message = "Account found successfully.",
+            Data = account
+        };
+    }
 }

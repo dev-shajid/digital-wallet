@@ -45,6 +45,10 @@ public static class DependencyInjection
         services.AddScoped<IExpenseCategoryService, ExpenseCategoryService>();
         services.AddScoped<IExpenseService, ExpenseService>();
 
+        // Wallet & Transfer Services
+        services.AddScoped<ITransferService, TransferService>();
+        services.AddScoped<IWalletService, WalletService>();
+
         return services;
     }
 }

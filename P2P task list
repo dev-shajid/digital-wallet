@@ -1,0 +1,70 @@
+Created P2P_TRANSFER_README.md
+
+I have updated [P2P_TRANSFER_README.md](file:///d:/github%20project%20Network/digital-wallet/P2P_TRANSFER_README.md) with a sequential numbered task list ordered from **1 to 19**:
+
+---
+
+## 📋 P2P Money Transfer — Ordered Task List
+
+1. **[x] Create Transfer Request DTO**  
+   Create [TransferRequest.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Application/Transfers/Models/TransferRequest.cs) (`ReceiverAccountNo` regex `^AC\d{8}$`, `Amount > 0` with max 2 decimals, optional `Note`).
+
+2. **[x] Create Transfer Response DTO**  
+   Create [TransferResponse.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Application/Transfers/Models/TransferResponse.cs) (`TransactionId`, `Reference`, `ReceiverAccountNo`, `ReceiverName`, `Amount`, `SenderBalanceAfter`, `Status`, `CreatedAt`).
+
+3. **[x] Create Transfer History Item DTO**  
+   Create [TransferHistoryItem.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Application/Transfers/Models/TransferHistoryItem.cs) (`TransactionId`, `Reference`, `Direction` ["SENT"/"RECEIVED"], `CounterpartyAccountNo`, `CounterpartyName`, `Amount`, `Status`, `Note`, `CreatedAt`).
+
+4. **[x] Create Wallet Balance Response DTO**  
+   Create [WalletBalanceResponse.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Application/Wallets/Models/WalletBalanceResponse.cs) (`WalletId`, `CurrencyCode`, `CurrencySymbol`, `Balance`, `Status`).
+
+5. **[x] Create Transfer Service Interface**  
+   Create [ITransferService.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Application/Abstractions/ITransferService.cs) with `TransferAsync` and `GetHistoryAsync`.
+
+6. **[x] Create Wallet Service Interface**  
+   Create [IWalletService.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Application/Abstractions/IWalletService.cs) with `GetMyBdtWalletAsync`.
+
+7. **[x] Implement Wallet Service**  
+   Create [WalletService.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Infrastructure/Services/WalletService.cs) implementing `IWalletService` to return the authenticated user's BDT balance.
+
+8. **[x] Implement Transfer Service**  
+   Create [TransferService.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Infrastructure/Services/TransferService.cs) implementing `ITransferService`:
+   - Validates active status and rejects self-transfers.
+   - Executes inside `BeginTransactionAsync`.
+   - Acquires ordered row locks (`SELECT ... FOR UPDATE` ordered by `Wallet.Id` ASC) to eliminate deadlocks.
+   - Inserts `Transaction`, two [WalletLog](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Domain/Entities/WalletLog.cs) rows (`DEBIT`/`CREDIT`), and one [P2PTransfer](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Domain/Entities/P2PTransfer.cs) row.
+   - Updates `Wallet.Balance` on both wallets and commits atomically.
+   - Implements `GetHistoryAsync` (merging sent/received transfers sorted by date descending).
+
+9. **[x] Register Services in Dependency Injection**  
+   Register `ITransferService` and `IWalletService` in [DependencyInjection.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Infrastructure/DependencyInjection.cs).
+
+10. **[x] Create Wallets Controller**  
+    Create [WalletsController.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Api/Controllers/WalletsController.cs) with `GET /wallets/me`.
+
+11. **[x] Create Transfers Controller**  
+    Create [TransfersController.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Api/Controllers/TransfersController.cs) with `POST /transfers` and `GET /transfers`.
+
+12. **[x] Add Account Lookup Endpoint**  
+    Add `GET /users/lookup?accountNo={accountNo}` to [UsersController.cs](file:///d:/github%20project%20Network/digital-wallet/backend/src/Wallet.Api/Controllers/UsersController.cs).
+
+13. **[x] Create Frontend TypeScript Types**  
+    Create `frontend/src/types/transfer.ts` with all transfer interfaces.
+
+14. **[x] Create Frontend API Client Functions**  
+    Create `frontend/src/lib/api/wallets.ts` and `frontend/src/lib/api/transfers.ts`.
+
+15. **[x] Create Frontend TanStack Query Hooks**  
+    Create `frontend/src/hooks/use-transfers.ts` providing `useMyWallet`, `useTransferHistory`, `useAccountLookup`, and `useSendTransfer`.
+
+16. **[x] Build Send Money Page**  
+    Create `frontend/src/app/(protected)/transfers/page.tsx` with balance card, transfer form, live account lookup feedback, receipt alerts, and history table.
+
+17. **[x] Update Navigation Sidebar**  
+    Add "Send Money" (`/transfers`) route link in `frontend/src/components/nav-main.tsx`.
+
+18. **[x] Write Integration & Concurrency Tests**  
+    Add integration tests in `backend/tests/Wallet.Api.IntegrationTests/Transfers/` covering all success/failure cases and concurrency safety (`Task.WhenAll`).
+
+19. **[x] Run End-to-End Verification & Code Review**  
+    Full codebase verified and reviewed across all layers without errors.
