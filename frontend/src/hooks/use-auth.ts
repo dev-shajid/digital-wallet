@@ -9,9 +9,9 @@ import {
 } from "@/lib/api/auth"
 import { useAuthStore } from "@/store/auth-store"
 
-// Every role lands on the same route after auth — /dashboard decides what to show
-// based on the signed-in user's role, rather than routing roles to different URLs.
-const HOME_ROUTE = "/dashboard"
+// Every role lands on the same route after auth — / decides what to show based
+// on the signed-in user's role, rather than routing roles to different URLs.
+const HOME_ROUTE = "/"
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 export function useLogin() {

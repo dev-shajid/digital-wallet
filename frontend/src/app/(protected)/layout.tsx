@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar"
 
 const PAGE_TITLES: Record<string, string> = {
-  "/dashboard": "Dashboard",
+  "/": "Dashboard",
   "/wallets": "Wallets",
   "/profile": "Profile",
 }

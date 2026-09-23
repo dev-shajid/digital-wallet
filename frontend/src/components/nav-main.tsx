@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sidebar"
 
 const NAV_ITEMS = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboardIcon },
+  { title: "Dashboard", url: "/", icon: LayoutDashboardIcon },
   { title: "Wallets", url: "/wallets", icon: WalletCardsIcon },
   { title: "Profile", url: "/profile", icon: UserRoundIcon },
 ]

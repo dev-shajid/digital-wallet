@@ -12,13 +12,13 @@ import type { NextRequest } from "next/server"
 // case the cookie and the persisted Zustand session ever drift.
 //
 // There's no role-based routing here on purpose: every user, regardless of role,
-// lands on the same routes (/dashboard, /profile) - pages decide what to render
-// based on the signed-in user's role, not which URL they're on.
+// lands on the same routes (/, /profile) - pages decide what to render based on
+// the signed-in user's role, not which URL they're on.
 
-const HOME_ROUTE = "/dashboard"
+const HOME_ROUTE = "/"
 const AUTH_ROUTES = ["/sign-in", "/sign-up"]
 const PROTECTED_ROUTE_PREFIXES = [
-  "/dashboard",
+  "/",
   "/wallets",
   "/profile",
 ]
