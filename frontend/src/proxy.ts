@@ -17,7 +17,11 @@ import type { NextRequest } from "next/server"
 
 const HOME_ROUTE = "/dashboard"
 const AUTH_ROUTES = ["/sign-in", "/sign-up"]
-const PROTECTED_ROUTE_PREFIXES = ["/dashboard", "/profile"]
+const PROTECTED_ROUTE_PREFIXES = [
+  "/dashboard",
+  "/wallets",
+  "/profile",
+]
 
 function matchesPrefix(pathname: string, prefixes: string[]) {
   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
