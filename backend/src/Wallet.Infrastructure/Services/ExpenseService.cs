@@ -1,18 +1,18 @@
 using Microsoft.EntityFrameworkCore;
-using Wallet.Application.Common.Models;
-using Wallet.Application.Expenses;
-using Wallet.Application.Expenses.Models;
-using Wallet.Domain.Entities;
-using Wallet.Domain.Enums;
-using Wallet.Infrastructure.Persistence;
+using WalletSystem.Application.Common.Models;
+using WalletSystem.Application.Expenses;
+using WalletSystem.Application.Expenses.Models;
+using WalletSystem.Domain.Entities;
+using WalletSystem.Domain.Enums;
+using WalletSystem.Infrastructure.Persistence;
 
-namespace Wallet.Infrastructure.Services;
+namespace WalletSystem.Infrastructure.Services;
 
 public class ExpenseService : IExpenseService
 {
-    private readonly AppDbContext _dbContext;
+    private readonly WalletDbContext _dbContext;
 
-    public ExpenseService(AppDbContext dbContext)
+    public ExpenseService(WalletDbContext dbContext)
     {
         _dbContext = dbContext;
     }
@@ -158,7 +158,7 @@ public class ExpenseService : IExpenseService
                 Amount = t.Amount,
                 Note = t.Note,
                 ExpenseDate = t.Expense!.ExpenseDate,
-                WalletBalanceAfter = t.WalletLogs.First().BalanceAfter,
+                WalletBalanceAfter = t.WalletLogs.First().BalanceAfter ?? 0m,
                 CreatedAt = t.CreatedAt
             })
             .ToListAsync(ct);

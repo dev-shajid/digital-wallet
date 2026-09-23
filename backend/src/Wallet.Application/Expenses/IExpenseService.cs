@@ -1,7 +1,7 @@
-using Wallet.Application.Common.Models;
-using Wallet.Application.Expenses.Models;
+using WalletSystem.Application.Common.Models;
+using WalletSystem.Application.Expenses.Models;
 
-namespace Wallet.Application.Expenses;
+namespace WalletSystem.Application.Expenses;
 
 public interface IExpenseService
 {

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WalletSystem.Application.Abstractions;
+using WalletSystem.Application.Expenses;
 using WalletSystem.Infrastructure.Persistence;
 using WalletSystem.Infrastructure.Services;
 using WalletSystem.Infrastructure.Settings;

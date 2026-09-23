@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Wallet.Api.Common;
-using Wallet.Application.Expenses;
-using Wallet.Application.Expenses.Models;
+using WalletSystem.Api.Common;
+using WalletSystem.Application.Expenses;
+using WalletSystem.Application.Expenses.Models;
 
-namespace Wallet.Api.Controllers;
+namespace WalletSystem.Api.Controllers;
 
 [ApiController]
 [Authorize]
@@ -23,7 +23,7 @@ public class ExpensesController : ControllerBase
     {
         var userId = User.GetUserId();
         var result = await _service.CreateExpenseAsync(userId, request, ct);
-        return result.Success ? this.ApiCreated(result) : this.ApiFail(result);
+        return StatusCode(result.Status, result);
     }
 
     [HttpGet]
@@ -31,6 +31,6 @@ public class ExpensesController : ControllerBase
     {
         var userId = User.GetUserId();
         var result = await _service.GetMyExpensesAsync(userId, ct);
-        return this.ApiOk(result);
+        return StatusCode(result.Status, result);
     }
 }

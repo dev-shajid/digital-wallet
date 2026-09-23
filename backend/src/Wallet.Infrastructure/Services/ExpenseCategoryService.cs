@@ -1,18 +1,18 @@
 using Microsoft.EntityFrameworkCore;
-using Wallet.Application.Common.Models;
-using Wallet.Application.Expenses;
-using Wallet.Application.Expenses.Models;
-using Wallet.Domain.Entities;
-using Wallet.Domain.Enums;
-using Wallet.Infrastructure.Persistence;
+using WalletSystem.Application.Common.Models;
+using WalletSystem.Application.Expenses;
+using WalletSystem.Application.Expenses.Models;
+using WalletSystem.Domain.Entities;
+using WalletSystem.Domain.Enums;
+using WalletSystem.Infrastructure.Persistence;
 
-namespace Wallet.Infrastructure.Services;
+namespace WalletSystem.Infrastructure.Services;
 
 public class ExpenseCategoryService : IExpenseCategoryService
 {
-    private readonly AppDbContext _dbContext;
+    private readonly WalletDbContext _dbContext;
 
-    public ExpenseCategoryService(AppDbContext dbContext)
+    public ExpenseCategoryService(WalletDbContext dbContext)
     {
         _dbContext = dbContext;
     }
