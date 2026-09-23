@@ -11,16 +11,18 @@ import type { NextRequest } from "next/server"
 // (src/components/guards/require-auth.tsx) double-checks this on the client in
 // case the cookie and the persisted Zustand session ever drift.
 //
-// There's no role-based routing here on purpose: every user, regardless of role,
-// lands on the same routes (/, /profile) - pages decide what to render based on
-// the signed-in user's role, not which URL they're on.
+// There's no role-based routing here on purpose: this only checks "is there a
+// token", not "does this role belong here" - pages (and the backend) decide
+// what a given role can actually see or do.
 
 const HOME_ROUTE = "/"
 const AUTH_ROUTES = ["/sign-in", "/sign-up"]
 const PROTECTED_ROUTE_PREFIXES = [
   "/",
   "/wallets",
+  "/expenses",
   "/profile",
+  "/admin",
 ]
 
 function matchesPrefix(pathname: string, prefixes: string[]) {

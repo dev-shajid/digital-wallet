@@ -19,7 +19,9 @@ import {
 const PAGE_TITLES: Record<string, string> = {
   "/": "Dashboard",
   "/wallets": "Wallets",
+  "/expenses": "Expenses",
   "/profile": "Profile",
+  "/admin/expense-categories": "Expense Categories",
 }
 
 function ProtectedHeader() {

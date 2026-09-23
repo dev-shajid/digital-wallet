@@ -13,7 +13,7 @@ import type {
 // Sends the form data, triggers OTP email. Returns 202 with no session data.
 export async function initiateRegistration(payload: InitiateRegistrationPayload) {
   const { data } = await api.post<ApiResponse<null>>(
-    "/auth/registration",
+    "/auth/initiate-registration",
     payload
   )
   return data
