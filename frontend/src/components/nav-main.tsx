@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  LayoutDashboardIcon,
+  LayoutDashboardIcon, SendIcon,
   UserRoundIcon,
   WalletCardsIcon,
 } from "lucide-react"
@@ -17,6 +17,7 @@ import {
 
 const NAV_ITEMS = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboardIcon },
+  { title: "Send Money", url: "/transfers", icon: SendIcon },
   { title: "Wallets", url: "/wallets", icon: WalletCardsIcon },
   { title: "Profile", url: "/profile", icon: UserRoundIcon },
 ]
