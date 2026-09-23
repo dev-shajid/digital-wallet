@@ -41,6 +41,10 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddSingleton<IRefreshTokenGenerator, RefreshTokenGenerator>();
 
+        // Wallet & Transfer Services
+        services.AddScoped<ITransferService, TransferService>();
+        services.AddScoped<IWalletService, WalletService>();
+
         return services;
     }
 }
