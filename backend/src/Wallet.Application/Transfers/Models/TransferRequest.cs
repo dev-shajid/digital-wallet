@@ -8,8 +8,13 @@ namespace WalletSystem.Application.Transfers.Models;
 public class TransferRequest
 {
     [Required(ErrorMessage = "Receiver account number is required.")]
-    [RegularExpression(@"^AC\d{8}$", ErrorMessage = "Enter a valid 10-character account number (e.g. AC00000001).")]
+    [RegularExpression(
+        @"^AC\d{8}$",
+        ErrorMessage = "Enter a valid 10-character account number.")]
     public string ReceiverAccountNo { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Currency ID is required.")]
+    public Guid CurrencyId { get; set; }
 
     [Required(ErrorMessage = "Amount is required.")]
     [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than 0.")]
